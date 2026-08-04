@@ -2,11 +2,11 @@
 """
 Genera el portal comercial de liquidacion (index.html autonomo).
 ==================================================================
-Reutiliza el procesador de datos ya probado (dashboard-obsolescencia/src),
-aplica el mapeo geografico real de zona_tienda.py (la columna Zona del
-Excel no es confiable por tienda, ver ese archivo), agrega el stock
-valorizado por zona para la seccion Analisis, e inyecta todo en la
-plantilla HTML/CSS/JS.
+Reutiliza el procesador de datos ya probado (dashboard-obsolescencia/src).
+La columna Zona del Excel viene corregida (una zona unica por tienda, sin
+mezclas), asi que se usa directamente. Version anterior de este archivo
+usaba un mapeo manual (zona_tienda.py) porque esa columna traia hasta 4
+zonas distintas por tienda -- ya no hace falta, ver README.md seccion 3.
 
 Ejecutar desde esta carpeta:
     python generar_portal.py
@@ -29,12 +29,20 @@ sys.path.insert(0, str(RAIZ_STREAMLIT))
 
 from src.services import cargador_excel as datos  # noqa: E402
 
-import zona_tienda  # noqa: E402
-
 PLANTILLA = RAIZ_PORTAL / "plantilla_portal.html"
 SALIDA = RAIZ_PORTAL / "index.html"
 LOGO_GRUPO_PLANET_B64 = (RAIZ_PORTAL / "logo_grupo_planet_b64.txt").read_text().strip()
 LOGO_AUTOPLANET_B64 = (RAIZ_PORTAL / "logo_autoplanet_b64.txt").read_text().strip()
+BANNER_HERO_B64 = (RAIZ_PORTAL / "banner_hero_b64.txt").read_text().strip()
+
+# Orden en que se ofrecen las zonas en el selector: geograficas de norte a
+# sur primero, luego las no geograficas. Cualquier zona nueva que aparezca
+# en el Excel y no este en esta lista se agrega al final, alfabetica -- no
+# desaparece silenciosamente.
+ORDEN_ZONAS = [
+    "Zona Norte", "Zona RM 1", "Zona RM 2", "Zona RM 3", "Zona V Region",
+    "Zona Centro Sur", "Zona Sur", "Agroplanet", "CD", "E-Commerce", "AP/SG",
+]
 
 
 class Diccionario:
@@ -74,18 +82,15 @@ def main() -> int:
     df = resultado.df
     print(f"  {len(df):,} productos con stock en la base")
 
-    # --- Zona geografica real (no la columna Zona del Excel) --------------
-    sin_mapa = sorted(set(df["tienda_label"]) - set(zona_tienda.ZONA_PRINCIPAL))
-    if sin_mapa:
-        print("\n  AVISO: estas tiendas no estan en zona_tienda.py y quedaran "
-              "sin zona geografica asignada (no apareceran en el selector de "
-              "zona, pero si en la tienda si se filtra por otro medio):")
-        for t in sin_mapa:
-            print("   -", t)
-
-    zona_real = df["tienda_label"].map(zona_tienda.ZONA_PRINCIPAL)
-    df = df.assign(zona_real=zona_real)
-    df = df[df["zona_real"].notna()]  # tiendas nuevas sin mapear quedan fuera, no se inventan
+    # --- Verificacion: una tienda no deberia tener mas de una zona --------
+    por_tienda = df.groupby("tienda_label")["zona"].nunique()
+    conflictivas = por_tienda[por_tienda > 1]
+    if len(conflictivas):
+        print(f"\n  AVISO: {len(conflictivas)} tiendas aparecen en mas de una "
+              "zona en el Excel. Se usara la zona mas frecuente de cada una, "
+              "pero conviene revisar el archivo de origen:")
+        for t in conflictivas.index:
+            print("   -", t, sorted(df.loc[df['tienda_label'] == t, 'zona'].unique()))
 
     # --- Diccionarios de texto --------------------------------------------
     d_zona, d_tienda, d_mat, d_texto, d_marca = (Diccionario() for _ in range(5))
@@ -94,7 +99,7 @@ def main() -> int:
     filas = []
     for fila in df.itertuples(index=False):
         filas.append([
-            d_zona.idx(fila.zona_real),
+            d_zona.idx(fila.zona),
             d_tienda.idx(fila.tienda_label),
             d_mat.idx(fila.material),
             d_texto.idx(getattr(fila, "texto_breve", "")),
@@ -104,12 +109,18 @@ def main() -> int:
             idx_opcional(d_modelo, getattr(fila, "app_modelo", None)),
             idx_opcional(d_motor, getattr(fila, "app_motor", None)),
             idx_opcional(d_anio, getattr(fila, "app_anios", None)),
+            limpio(fila.stock),
             limpio(getattr(fila, "precio_normal", None)),
             limpio(fila.valor_remate),
         ])
 
-    # --- Zonas en el orden fijo definido en zona_tienda.py -----------------
-    zonas_presentes = [z for z in zona_tienda.ORDEN_ZONAS if z in d_zona.mapa]
+    # --- Zonas en el orden fijo de ORDEN_ZONAS -----------------------------
+    zonas_presentes = [z for z in ORDEN_ZONAS if z in d_zona.mapa]
+    zonas_nuevas = sorted(z for z in d_zona.mapa if z not in ORDEN_ZONAS)
+    if zonas_nuevas:
+        print(f"\n  AVISO: zonas nuevas no listadas en ORDEN_ZONAS (se agregan "
+              f"al final del selector): {zonas_nuevas}")
+    zonas_presentes += zonas_nuevas
     orden_zona = {z: i for i, z in enumerate(zonas_presentes)}
     # Reordena el diccionario de zonas para que el frontend las liste en ese orden
     reindex = sorted(range(len(d_zona.lista)), key=lambda i: orden_zona.get(d_zona.lista[i], 999))
@@ -120,7 +131,7 @@ def main() -> int:
 
     # --- Stock valorizado por zona (para la seccion Analisis) --------------
     valor_por_zona: dict[str, float] = defaultdict(float)
-    for stock, remate, zona in zip(df["stock"], df["valor_remate"], df["zona_real"]):
+    for stock, remate, zona in zip(df["stock"], df["valor_remate"], df["zona"]):
         if stock is not None and remate is not None:
             valor_por_zona[zona] += stock * remate
     analisis = sorted(
@@ -164,6 +175,7 @@ def main() -> int:
     )
     html = html.replace("__LOGO_GRUPO_PLANET__", LOGO_GRUPO_PLANET_B64)
     html = html.replace("__LOGO_AUTOPLANET__", LOGO_AUTOPLANET_B64)
+    html = html.replace("__BANNER_HERO__", BANNER_HERO_B64)
     datos_js = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     html = html.replace("/*__DATOS__*/null", datos_js)
 

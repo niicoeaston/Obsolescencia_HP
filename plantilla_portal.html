@@ -129,10 +129,13 @@ button,input,select{font:inherit;color:inherit}
 
 /* ---------- Hero + tarjeta flotante ---------- */
 .hero{
-  background:linear-gradient(180deg, var(--rojo) 0%, var(--rojo-oscuro) 100%);
+  background:
+    linear-gradient(90deg, rgba(8,11,16,.90) 0%, rgba(8,11,16,.68) 42%, rgba(8,11,16,.30) 100%),
+    url(data:image/jpeg;base64,__BANNER_HERO__) right 60% / auto 175% no-repeat,
+    linear-gradient(180deg, var(--rojo) 0%, var(--rojo-oscuro) 100%);
   color:#fff; padding:40px 0 84px;
 }
-@media(max-width:640px){.hero{padding:28px 0 72px}}
+@media(max-width:640px){.hero{padding:28px 0 72px; background-position:30% 60%; background-size:auto 230%}}
 .hero-interior{max-width:1180px;margin:0 auto;padding:0 20px}
 @media(max-width:640px){.hero-interior{padding:0 16px}}
 .hero h1{
@@ -237,6 +240,8 @@ td.marca{color:var(--tinta-2)}
    visible sin scroll horizontal; Marca se oculta en este rango angosto. */
 @media(max-width:980px) and (min-width:768px){
   th.col-marca, td.marca{display:none}
+  td.desc{min-width:150px}
+  thead th, tbody td{padding-left:10px;padding-right:10px}
 }
 .chip-subcat{
   display:inline-block;padding:3px 11px;border-radius:999px;background:var(--naranja-suave);
@@ -262,6 +267,8 @@ td.precio{text-align:right;white-space:nowrap}
 }
 .tp-titulo{font-size:15.5px;font-weight:700;line-height:1.3}
 .tp-cod{font-size:12.5px;color:var(--tenue);margin-top:2px}
+.tp-stock{font-size:12.5px;color:var(--tinta-2);margin-top:4px}
+.tp-stock b{color:var(--tinta);font-weight:700}
 .tp-precio{border-top:1px solid var(--borde);margin-top:12px;padding-top:12px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
 .tp-precio .izq{font-size:13px;color:var(--tenue)}
 .tp-precio .valor{font-size:24px;font-weight:800;color:var(--rojo);letter-spacing:-.02em;line-height:1}
@@ -395,7 +402,8 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
         <label class="campo" style="flex-direction:row;align-items:center;gap:8px">
           <span style="text-transform:none;font-weight:600;color:var(--tinta-2)">Ordenar por</span>
           <select id="fOrden">
-            <option value="remate">Valor remate con IVA</option>
+            <option value="remate">Precio Liquidación</option>
+            <option value="stock">Stock disponible</option>
             <option value="texto">Texto breve</option>
             <option value="material">Código de material</option>
             <option value="subcat">Subcategoría</option>
@@ -424,6 +432,7 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
               <th>Texto breve del material</th>
               <th class="col-marca">Marca</th>
               <th id="th-subcat">Subcategoría</th>
+              <th class="der">Stock</th>
               <th class="der">Precio</th>
             </tr>
           </thead>
@@ -460,6 +469,7 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
         <div class="donut-caja">
           <svg class="donut-svg" id="donutSvg" viewBox="0 0 220 220" role="img" aria-label="Distribución de stock valorizado por zona"></svg>
           <div class="leyenda" id="leyendaDonut"></div>
+          <p style="font-size:11.5px;color:var(--tenue);margin:2px 0 0;text-align:center">Las zonas con menor participación se agrupan en "Otras zonas" en el gráfico. La tabla muestra el detalle de cada una.</p>
         </div>
         <div class="tabla-analisis">
           <table>
@@ -497,8 +507,8 @@ const norm = s => String(s??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/
 const TODAS = '— Todas —';
 const $ = id => document.getElementById(id);
 
-/* columnas de cada fila: Z,T,M,X,MA,CA,SC,MO,MT,AN,PN,VR */
-const Z=0,T=1,M=2,X=3,MA=4,CA=5,SC=6,MO=7,MT=8,AN=9,PN=10,VR=11;
+/* columnas de cada fila: Z,T,M,X,MA,CA,SC,MO,MT,AN,ST,PN,VR */
+const Z=0,T=1,M=2,X=3,MA=4,CA=5,SC=6,MO=7,MT=8,AN=9,ST=10,PN=11,VR=12;
 
 const busqueda = D.filas.map(f => norm([
   D.materiales[f[M]], D.textos[f[X]], D.marcas[f[MA]], D.subcats[f[SC]],
@@ -574,7 +584,7 @@ function pintarMensajes(filas){
 function ordenar(filas){
   const dir = estado.sentido==='asc' ? 1 : -1;
   const clave = {
-    remate: f=>f[VR], texto: f=>D.textos[f[X]], material: f=>D.materiales[f[M]], subcat: f=>D.subcats[f[SC]],
+    remate: f=>f[VR], stock: f=>f[ST], texto: f=>D.textos[f[X]], material: f=>D.materiales[f[M]], subcat: f=>D.subcats[f[SC]],
   }[estado.orden];
   const copia = filas.slice();
   copia.sort((a,b)=>{
@@ -596,6 +606,7 @@ function filaTablaHtml(f, mostrarSubcat){
     <td class="desc">${esc(D.textos[f[X]])}</td>
     <td class="marca">${esc(D.marcas[f[MA]])}</td>
     <td>${mostrarSubcat?`<span class="chip-subcat">${esc(D.subcats[f[SC]])}</span>`:'<span style="color:var(--tenue)">—</span>'}</td>
+    <td class="der stock">${num(f[ST])}</td>
     <td class="precio">${precio}</td>
   </tr>`;
 }
@@ -613,6 +624,7 @@ function tarjetaProdHtml(f, i){
       <div class="tp-info">
         <div class="tp-titulo">${esc(D.textos[f[X]])}</div>
         <div class="tp-cod">${esc(D.materiales[f[M]])} · ${esc(D.marcas[f[MA]])}</div>
+        <div class="tp-stock">Stock disponible: <b>${num(f[ST])} ${f[ST]===1?'unidad':'unidades'}</b></div>
       </div>
       <span class="chip-subcat">${esc(D.subcats[f[SC]])}</span>
     </div>
@@ -775,15 +787,32 @@ function coloresActuales(){
 }
 
 function pintarAnalisis(){
-  const datos = D.analisis; // [{zona, valor}], ya ordenado desc por Python
+  const datos = D.analisis; // [{zona, valor}], ya ordenado desc por Python -- TODAS las zonas, para la tabla
   const colores = coloresActuales();
   const total = datos.reduce((s,d)=>s+d.valor,0);
   const cx=110, cy=110, rExt=95, rInt=58, gap=0.014; // gap en radianes entre segmentos
 
+  // El donut solo distingue con claridad hasta ~5-6 colores (mas que eso, dos
+  // colores terminan repitiendose y dos zonas distintas se verian iguales).
+  // Las zonas top-5 se colorean individualmente; el resto se agrupa en un
+  // solo segmento gris "Otras zonas". La TABLA de abajo si lista cada zona
+  // por separado, sin agrupar nada.
+  const MAX_SEGMENTOS = colores.length - 1; // ultimo color reservado para "Otras"
+  const principales = datos.slice(0, MAX_SEGMENTOS);
+  const resto = datos.slice(MAX_SEGMENTOS);
+  const paraGrafico = principales.slice();
+  if (resto.length){
+    paraGrafico.push({
+      zona: resto.length === 1 ? resto[0].zona : `Otras zonas (${resto.length})`,
+      valor: resto.reduce((s,d)=>s+d.valor,0),
+      agrupada: resto.length > 1,
+    });
+  }
+
   let anguloAcum = -Math.PI/2;
   const svg = $('donutSvg');
   let piezas = '';
-  datos.forEach((d,i)=>{
+  paraGrafico.forEach((d,i)=>{
     const frac = total? d.valor/total : 0;
     const barrido = Math.max(0, frac*Math.PI*2 - gap);
     const a0 = anguloAcum + gap/2, a1 = a0 + barrido;
@@ -810,7 +839,7 @@ function pintarAnalisis(){
 
   const tip = $('tip-donut');
   svg.querySelectorAll('.donut-slice').forEach(el=>{
-    const d = datos[+el.dataset.i];
+    const d = paraGrafico[+el.dataset.i];
     const frac = total? d.valor/total : 0;
     el.addEventListener('mousemove', e=>{
       tip.innerHTML = `<b>${esc(d.zona)}</b><br>${clp(d.valor)} · ${(frac*100).toFixed(1)}%`;
@@ -821,7 +850,7 @@ function pintarAnalisis(){
     el.addEventListener('mouseleave', ()=>tip.style.display='none');
   });
 
-  $('leyendaDonut').innerHTML = datos.map((d,i)=>{
+  $('leyendaDonut').innerHTML = paraGrafico.map((d,i)=>{
     const frac = total? d.valor/total : 0;
     return `<div class="leyenda-item" data-i="${i}">
       <span class="leyenda-dot" style="background:${colores[i%colores.length]}"></span>
