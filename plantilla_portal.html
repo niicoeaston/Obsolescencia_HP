@@ -156,10 +156,27 @@ button,input,select{font:inherit;color:inherit}
   margin:-56px 0 0; padding:22px 24px 18px; position:relative; z-index:5;
 }
 @media(max-width:640px){.tarjeta-filtros{margin-top:-48px;padding:18px 16px 14px}}
-.fila-filtros{display:grid;grid-template-columns:repeat(3,1fr) 1.3fr auto;gap:14px;align-items:start}
-.fila-filtros .link-limpiar{margin-top:29px}
-@media(max-width:980px){.fila-filtros{grid-template-columns:1fr 1fr}}
+.fila-filtros{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
 @media(max-width:640px){.fila-filtros{grid-template-columns:1fr}}
+
+/* Boton "Más filtros": evidente, con badge de cantidad activa, colapsa el bloque de aplicacion */
+.btn-mas-filtros{
+  appearance:none;display:inline-flex;align-items:center;gap:8px;margin-top:14px;
+  background:var(--zebra);border:1.5px dashed var(--borde-fuerte);color:var(--tinta-2);
+  border-radius:var(--radio-chico);min-height:44px;padding:0 16px;font-size:13.5px;font-weight:700;
+  cursor:pointer;width:100%;justify-content:flex-start;
+}
+.btn-mas-filtros:hover{border-color:var(--rojo);color:var(--rojo)}
+.btn-mas-filtros .chev{margin-left:auto;transition:transform .15s}
+.btn-mas-filtros[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.badge-filtros{
+  background:var(--rojo);color:#fff;border-radius:999px;min-width:19px;height:19px;
+  font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;
+}
+.bloque-aplicacion{display:none;margin-top:14px;padding-top:14px;border-top:1px dashed var(--borde)}
+.bloque-aplicacion.abierto{display:block}
+.fila-buscar{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:end;margin-top:14px}
+@media(max-width:640px){.fila-buscar{grid-template-columns:1fr}}
 .campo{display:flex;flex-direction:column;gap:6px;min-width:0}
 .campo > label{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--tinta-2)}
 .campo .ayuda{font-size:11.5px;color:var(--tenue);margin-top:2px}
@@ -231,8 +248,26 @@ thead th{
 }
 thead th.der{text-align:right}
 tbody td{padding:13px 16px;border-bottom:1px solid var(--borde);vertical-align:middle}
-tbody tr:nth-child(even) td{background:var(--zebra)}
-tbody tr:hover td{background:var(--naranja-suave)}
+/* Zebra por clase, no por nth-child: cada producto ahora ocupa 2 <tr> (fila
+   + fila-detalle oculta), asi que nth-child(even/odd) ya no alterna bien. */
+tbody tr.fila-par td{background:var(--zebra)}
+tbody tr.fila-prod:hover td{background:var(--naranja-suave)}
+tbody tr.fila-detalle td{background:var(--plano) !important}
+tbody tr.fila-detalle:hover td{background:var(--plano) !important}
+.col-detalle{width:1%}
+.btn-detalle-fila{
+  appearance:none;background:transparent;border:1px solid var(--borde-fuerte);border-radius:var(--radio-chico);
+  color:var(--rojo);font-weight:700;font-size:12.5px;padding:6px 11px;cursor:pointer;white-space:nowrap;
+}
+.btn-detalle-fila:hover{background:var(--rojo);color:#fff;border-color:var(--rojo)}
+.btn-detalle-fila .chev{display:inline-block;transition:transform .15s}
+.btn-detalle-fila[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.detalle-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 24px;padding:6px 4px;
+}
+.detalle-grid > div{display:flex;flex-direction:column;gap:2px}
+.detalle-label{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tenue)}
+.detalle-valor{font-size:13.5px;color:var(--tinta)}
 td.cod{color:var(--tinta-2);font-size:13px;white-space:nowrap}
 td.desc{font-weight:600;min-width:220px}
 td.marca{color:var(--tinta-2)}
@@ -242,6 +277,8 @@ td.marca{color:var(--tinta-2)}
   th.col-marca, td.marca{display:none}
   td.desc{min-width:150px}
   thead th, tbody td{padding-left:10px;padding-right:10px}
+  .btn-detalle-fila{padding:6px 9px;font-size:0}
+  .btn-detalle-fila .chev{font-size:15px;font-weight:800}
 }
 .chip-subcat{
   display:inline-block;padding:3px 11px;border-radius:999px;background:var(--naranja-suave);
@@ -383,11 +420,38 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
             <select id="fSubcat" disabled></select>
             <span class="ayuda" id="ayuda-subcat">Selecciona primero tu tienda</span>
           </div>
+        </div>
+
+        <button class="btn-mas-filtros" id="btnMasFiltros" type="button" aria-expanded="false" aria-controls="bloqueAplicacion">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Filtros de aplicación (Marca, Modelo, Año)
+          <span class="badge-filtros" id="badgeMasFiltros" hidden>0</span>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <div class="bloque-aplicacion" id="bloqueAplicacion">
+          <div class="fila-filtros fila-aplicacion">
+            <div class="campo">
+              <label for="fMarcaVeh">Marca del vehículo</label>
+              <select id="fMarcaVeh" disabled></select>
+            </div>
+            <div class="campo">
+              <label for="fModelo">Modelo</label>
+              <select id="fModelo" disabled></select>
+            </div>
+            <div class="campo">
+              <label for="fAnio">Año</label>
+              <select id="fAnio" disabled></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="fila-buscar">
           <div class="campo">
             <label for="fBuscar">Buscar</label>
             <div class="buscador-wrap">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              <input type="search" id="fBuscar" placeholder="Material, marca, modelo…" disabled autocomplete="off">
+              <input type="search" id="fBuscar" placeholder="Material, marca, modelo, motor, año…" disabled autocomplete="off">
             </div>
           </div>
           <button class="link-limpiar" id="btnLimpiar" type="button">Limpiar filtros</button>
@@ -434,6 +498,7 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
               <th id="th-subcat">Subcategoría</th>
               <th class="der">Stock</th>
               <th class="der">Precio</th>
+              <th class="col-detalle"></th>
             </tr>
           </thead>
           <tbody id="cuerpo-tabla"></tbody>
@@ -462,7 +527,7 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
     <div class="envoltura" style="padding-top:32px">
       <h2 style="font-size:24px;margin:0 0 4px">Stock valorizado por zona</h2>
       <p style="color:var(--tinta-2);margin:0 0 24px;max-width:640px">
-        Stock valorizado = stock disponible × valor remate con IVA. Vista de referencia general de la campaña, no reemplaza la consulta por tienda.
+        Valorización oficial por zona (fuente: Resumen (2), Distribución por zona). Vista de referencia general de la campaña, no reemplaza la consulta por tienda.
       </p>
 
       <div class="analisis-grid">
@@ -507,15 +572,24 @@ const norm = s => String(s??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/
 const TODAS = '— Todas —';
 const $ = id => document.getElementById(id);
 
-/* columnas de cada fila: Z,T,M,X,MA,CA,SC,MO,MT,AN,ST,PN,VR */
-const Z=0,T=1,M=2,X=3,MA=4,CA=5,SC=6,MO=7,MT=8,AN=9,ST=10,PN=11,VR=12;
+/* columnas de cada fila: Z,T,M,X,MA,MV,CA,SC,MO,MT,AN,ST,PN,VR */
+const Z=0,T=1,M=2,X=3,MA=4,MV=5,CA=6,SC=7,MO=8,MT=9,AN=10,ST=11,PN=12,VR=13;
 
 const busqueda = D.filas.map(f => norm([
   D.materiales[f[M]], D.textos[f[X]], D.marcas[f[MA]], D.subcats[f[SC]],
-  D.categorias[f[CA]], f[MO]>=0?D.modelos[f[MO]]:'', f[MT]>=0?D.motores[f[MT]]:'', f[AN]>=0?D.anios[f[AN]]:''
+  D.categorias[f[CA]], f[MV]>=0?D.marcasVehiculo[f[MV]]:'',
+  f[MO]>=0?D.modelos[f[MO]]:'', f[MT]>=0?D.motores[f[MT]]:'', f[AN]>=0?D.anios[f[AN]]:''
 ].join(' ')));
 
-const estado = {zona:'', tienda:'', subcat:'', q:'', orden:'remate', sentido:'desc', pagina:1};
+/* anio seleccionado (numero) por fila -> se resuelve via D.aniosPorIndice[f[AN]] */
+function aniosDeFila(f){
+  return f[AN]>=0 ? (D.aniosPorIndice[f[AN]] || []) : [];
+}
+
+const estado = {
+  zona:'', tienda:'', subcat:'', marcaVeh:'', modelo:'', anio:'', q:'',
+  orden:'remate', sentido:'desc', pagina:1,
+};
 const PORPAGINA = 40;
 
 /* ---------------- filtrado ---------------- */
@@ -523,6 +597,9 @@ function filtrar(omitir){
   const zi = (omitir!=='zona' && estado.zona) ? D.zonas.indexOf(estado.zona) : -1;
   const ti = (omitir!=='tienda' && estado.tienda) ? D.tiendas.indexOf(estado.tienda) : -1;
   const si = (omitir!=='subcat' && estado.subcat) ? D.subcats.indexOf(estado.subcat) : -1;
+  const mvi = (omitir!=='marcaVeh' && estado.marcaVeh) ? D.marcasVehiculo.indexOf(estado.marcaVeh) : -1;
+  const moi = (omitir!=='modelo' && estado.modelo) ? D.modelos.indexOf(estado.modelo) : -1;
+  const anioSel = (omitir!=='anio' && estado.anio) ? +estado.anio : null;
   const toks = estado.q ? norm(estado.q).split(/\s+/).filter(Boolean) : null;
   const out = [];
   for (let i=0;i<D.filas.length;i++){
@@ -530,6 +607,9 @@ function filtrar(omitir){
     if (zi>=0 && f[Z]!==zi) continue;
     if (ti>=0 && f[T]!==ti) continue;
     if (si>=0 && f[SC]!==si) continue;
+    if (mvi>=0 && f[MV]!==mvi) continue;
+    if (moi>=0 && f[MO]!==moi) continue;
+    if (anioSel!==null && !aniosDeFila(f).includes(anioSel)) continue;
     if (toks){ const s=busqueda[i]; let ok=true; for(const t of toks){ if(!s.includes(t)){ok=false;break;} } if(!ok) continue; }
     out.push(f);
   }
@@ -545,6 +625,25 @@ function opcionesSubcat(){
   const base = filtrar('subcat');
   const vistos = new Set(base.map(f=>f[SC]));
   return D.subcats.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
+}
+function opcionesMarcaVeh(){
+  if (!estado.tienda) return [];
+  const base = filtrar('marcaVeh');
+  const vistos = new Set(base.map(f=>f[MV]).filter(i=>i>=0));
+  return D.marcasVehiculo.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
+}
+function opcionesModelo(){
+  if (!estado.tienda) return [];
+  const base = filtrar('modelo');
+  const vistos = new Set(base.map(f=>f[MO]).filter(i=>i>=0));
+  return D.modelos.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
+}
+function opcionesAnio(){
+  if (!estado.tienda) return [];
+  const base = filtrar('anio');
+  const anios = new Set();
+  base.forEach(f => aniosDeFila(f).forEach(a => anios.add(a)));
+  return [...anios].sort((a,b)=>a-b).map(String);
 }
 function llenarSelect(sel, opciones, valor, deshabilitado){
   sel.innerHTML = [TODAS, ...opciones].map(o=>{
@@ -597,17 +696,43 @@ function ordenar(filas){
   return copia;
 }
 
-function filaTablaHtml(f, mostrarSubcat){
+/* Contenido del "Ver detalle": el mismo en escritorio y en movil. */
+function contenidoDetalle(f){
+  const campos = [];
+  if (f[MV]>=0) campos.push(['Marca del vehículo', esc(D.marcasVehiculo[f[MV]])]);
+  if (f[MO]>=0) campos.push(['Modelo', esc(D.modelos[f[MO]])]);
+  if (f[MT]>=0) campos.push(['Motor', esc(D.motores[f[MT]])]);
+  if (f[AN]>=0){
+    campos.push(['Años de aplicación (original)', esc(D.anios[f[AN]])]);
+    const ap = aniosDeFila(f);
+    if (ap.length>1) campos.push(['Años aperturados', ap.join(', ')]);
+  }
+  if (estado.anio) campos.push(['Compatible con el año seleccionado', esc(estado.anio)]);
+  if (!campos.length) campos.push(['Aplicación vehicular', 'Información no disponible']);
+  return campos;
+}
+function filaTablaHtml(f, mostrarSubcat, i){
   const precio = f[VR]===null
     ? `<span class="precio-remate pendiente">Precio pendiente</span>`
     : `${f[PN]?`<span class="precio-normal">${clp(f[PN])}</span>`:''}<span class="precio-remate">${clp(f[VR])}</span>`;
-  return `<tr>
+  const campos = contenidoDetalle(f);
+  const colspan = 7;
+  const clasePar = (i%2===0) ? ' fila-par' : '';
+  return `<tr class="fila-prod${clasePar}">
     <td class="cod">${esc(D.materiales[f[M]])}</td>
     <td class="desc">${esc(D.textos[f[X]])}</td>
     <td class="marca">${esc(D.marcas[f[MA]])}</td>
     <td>${mostrarSubcat?`<span class="chip-subcat">${esc(D.subcats[f[SC]])}</span>`:'<span style="color:var(--tenue)">—</span>'}</td>
     <td class="der stock">${num(f[ST])}</td>
     <td class="precio">${precio}</td>
+    <td class="der"><button class="btn-detalle-fila" data-i="${i}" type="button" aria-expanded="false" aria-label="Ver detalle">Ver detalle <span class="chev">›</span></button></td>
+  </tr>
+  <tr class="fila-detalle${clasePar}" id="fila-det-${i}" hidden>
+    <td colspan="${colspan}">
+      <div class="detalle-grid">
+        ${campos.map(([l,v])=>`<div><span class="detalle-label">${esc(l)}</span><span class="detalle-valor">${v}</span></div>`).join('')}
+      </div>
+    </td>
   </tr>`;
 }
 function tarjetaProdHtml(f, i){
@@ -615,10 +740,7 @@ function tarjetaProdHtml(f, i){
     ? `<span class="valor pendiente">Precio pendiente</span>`
     : `<span class="valor">${clp(f[VR])}</span>`;
   const normal = (f[VR]!==null && f[PN]) ? `<div>Normal ${clp(f[PN])}</div>` : '';
-  const detalle = [];
-  if (f[MO]>=0) detalle.push(`<div><b>Modelo:</b> ${esc(D.modelos[f[MO]])}</div>`);
-  if (f[MT]>=0) detalle.push(`<div><b>Motor:</b> ${esc(D.motores[f[MT]])}</div>`);
-  if (f[AN]>=0) detalle.push(`<div><b>Años:</b> ${esc(D.anios[f[AN]])}</div>`);
+  const campos = contenidoDetalle(f);
   return `<div class="tarjeta-prod">
     <div class="tp-cabeza">
       <div class="tp-info">
@@ -628,7 +750,10 @@ function tarjetaProdHtml(f, i){
       </div>
       <span class="chip-subcat">${esc(D.subcats[f[SC]])}</span>
     </div>
-    ${detalle.length?`<button class="tp-detalle-btn" data-i="${i}" type="button">Ver detalle ›</button><div class="tp-detalle" id="det-${i}">${detalle.join('')}</div>`:''}
+    <button class="tp-detalle-btn" data-i="${i}" type="button" aria-expanded="false">Ver detalle ›</button>
+    <div class="tp-detalle" id="det-${i}">
+      ${campos.map(([l,v])=>`<div><b>${esc(l)}:</b> ${v}</div>`).join('')}
+    </div>
     <div class="tp-precio">
       <div class="izq">${normal}</div>
       ${precio}
@@ -646,13 +771,19 @@ function pintarResultados(filas){
   const desde = (estado.pagina-1)*PORPAGINA;
   const trozo = filas.slice(desde, desde+PORPAGINA);
 
-  $('cuerpo-tabla').innerHTML = trozo.map(f=>filaTablaHtml(f, mostrarSubcat)).join('') ||
-    `<tr><td colspan="5" class="vacio-tabla">Sin productos para los filtros aplicados</td></tr>`;
+  $('cuerpo-tabla').innerHTML = trozo.map((f,i)=>filaTablaHtml(f, mostrarSubcat, desde+i)).join('') ||
+    `<tr><td colspan="7" class="vacio-tabla">Sin productos para los filtros aplicados</td></tr>`;
   $('cuerpo-tarjetas').innerHTML = trozo.length
     ? trozo.map((f,i)=>tarjetaProdHtml(f, desde+i)).join('')
     : `<div class="vacio-tarjetas">Sin productos para los filtros aplicados</div>`;
   $('cuerpo-tarjetas').querySelectorAll('.tp-detalle-btn').forEach(b=>b.addEventListener('click', ()=>{
     $('det-'+b.dataset.i).classList.toggle('abierto');
+    b.setAttribute('aria-expanded', $('det-'+b.dataset.i).classList.contains('abierto') ? 'true' : 'false');
+  }));
+  $('cuerpo-tabla').querySelectorAll('.btn-detalle-fila').forEach(b=>b.addEventListener('click', ()=>{
+    const fila = $('fila-det-'+b.dataset.i);
+    fila.hidden = !fila.hidden;
+    b.setAttribute('aria-expanded', fila.hidden ? 'false' : 'true');
   }));
 
   $('paginas').innerHTML = total>1 ? `
@@ -679,12 +810,20 @@ function render(){
   llenarSelect($('fZona'), D.zonas, estado.zona, false);
   llenarSelect($('fTienda'), opcionesTienda(), estado.tienda, !estado.zona);
   llenarSelect($('fSubcat'), opcionesSubcat(), estado.subcat, !estado.tienda);
+  llenarSelect($('fMarcaVeh'), opcionesMarcaVeh(), estado.marcaVeh, !estado.tienda);
+  llenarSelect($('fModelo'), opcionesModelo(), estado.modelo, !estado.tienda);
+  llenarSelect($('fAnio'), opcionesAnio(), estado.anio, !estado.tienda);
   $('fBuscar').disabled = !estado.tienda;
   $('fBuscar').value = estado.q;
   $('ayuda-tienda').style.display = estado.zona ? 'none' : '';
   $('ayuda-subcat').style.display = estado.tienda ? 'none' : '';
   $('fOrden').value = estado.orden; $('fSentido').value = estado.sentido;
   actualizarPaso();
+
+  const activosAplicacion = [estado.marcaVeh, estado.modelo, estado.anio].filter(Boolean).length;
+  const badge = $('badgeMasFiltros');
+  if (activosAplicacion){ badge.hidden=false; badge.textContent = activosAplicacion; }
+  else badge.hidden = true;
 
   const filas = filtrar();
   pintarMensajes(filas);
@@ -695,7 +834,8 @@ function render(){
 
   if (mostrar){
     FILTRADAS = ordenar(filas);
-    const detalle = [estado.tienda, estado.subcat].filter(Boolean).join(' · ');
+    const detalle = [estado.tienda, estado.subcat, estado.marcaVeh, estado.modelo,
+                     estado.anio?('Año '+estado.anio):''].filter(Boolean).join(' · ');
     $('conteo').innerHTML = `${num(FILTRADAS.length)} ${FILTRADAS.length===1?'producto encontrado':'productos encontrados'}<span>${esc(detalle)}</span>`;
     pintarResultados(FILTRADAS);
   } else {
@@ -706,15 +846,38 @@ function render(){
 /* ---------------- eventos filtros ---------------- */
 $('fZona').addEventListener('change', e=>{
   estado.zona = e.target.value;
-  if (estado.tienda && !opcionesTienda().includes(estado.tienda)){ estado.tienda=''; estado.subcat=''; }
+  if (estado.tienda && !opcionesTienda().includes(estado.tienda)){
+    estado.tienda=''; estado.subcat=''; estado.marcaVeh=''; estado.modelo=''; estado.anio='';
+  }
   estado.pagina=1; render();
 });
 $('fTienda').addEventListener('change', e=>{
   estado.tienda = e.target.value;
   if (estado.subcat && !opcionesSubcat().includes(estado.subcat)) estado.subcat='';
+  if (estado.marcaVeh && !opcionesMarcaVeh().includes(estado.marcaVeh)) estado.marcaVeh='';
+  if (estado.modelo && !opcionesModelo().includes(estado.modelo)) estado.modelo='';
+  if (estado.anio && !opcionesAnio().includes(estado.anio)) estado.anio='';
   estado.pagina=1; render();
 });
-$('fSubcat').addEventListener('change', e=>{ estado.subcat=e.target.value; estado.pagina=1; render(); });
+$('fSubcat').addEventListener('change', e=>{
+  estado.subcat=e.target.value;
+  if (estado.marcaVeh && !opcionesMarcaVeh().includes(estado.marcaVeh)) estado.marcaVeh='';
+  if (estado.modelo && !opcionesModelo().includes(estado.modelo)) estado.modelo='';
+  if (estado.anio && !opcionesAnio().includes(estado.anio)) estado.anio='';
+  estado.pagina=1; render();
+});
+$('fMarcaVeh').addEventListener('change', e=>{
+  estado.marcaVeh=e.target.value;
+  if (estado.modelo && !opcionesModelo().includes(estado.modelo)) estado.modelo='';
+  if (estado.anio && !opcionesAnio().includes(estado.anio)) estado.anio='';
+  estado.pagina=1; render();
+});
+$('fModelo').addEventListener('change', e=>{
+  estado.modelo=e.target.value;
+  if (estado.anio && !opcionesAnio().includes(estado.anio)) estado.anio='';
+  estado.pagina=1; render();
+});
+$('fAnio').addEventListener('change', e=>{ estado.anio=e.target.value; estado.pagina=1; render(); });
 $('fOrden').addEventListener('change', e=>{ estado.orden=e.target.value; estado.pagina=1; render(); });
 $('fSentido').addEventListener('change', e=>{ estado.sentido=e.target.value; estado.pagina=1; render(); });
 let tq;
@@ -723,16 +886,28 @@ $('fBuscar').addEventListener('input', e=>{
   tq=setTimeout(()=>{ estado.q=v.trim(); estado.pagina=1; render(); }, 200);
 });
 $('btnLimpiar').addEventListener('click', ()=>{
-  estado.zona=estado.tienda=estado.subcat=estado.q=''; estado.pagina=1; render();
+  estado.zona=estado.tienda=estado.subcat=estado.marcaVeh=estado.modelo=estado.anio=estado.q='';
+  estado.pagina=1; render();
 });
 $('btnTodaTienda').addEventListener('click', ()=>{ estado.subcat=''; estado.pagina=1; render(); });
+$('btnMasFiltros').addEventListener('click', ()=>{
+  const bloque = $('bloqueAplicacion');
+  const abierto = bloque.classList.toggle('abierto');
+  $('btnMasFiltros').setAttribute('aria-expanded', String(abierto));
+});
 
 /* ---------------- descarga CSV ---------------- */
 $('btnDescargar').addEventListener('click', ()=>{
-  const cab = ['Zona','Tienda','Material','Texto breve','Marca','Categoría','Subcategoría','Precio normal','Valor remate con IVA'];
+  const cab = ['Zona','Tienda','Material','Texto breve','Marca','Categoría','Subcategoría',
+               'Marca vehículo','Modelo','Motor','Rango de años original','Años aperturados',
+               'Stock disponible','Precio normal','Precio Liquidación'];
   const filas = FILTRADAS.map(f=>{
+    const aniosAp = aniosDeFila(f).join(', ');
     const fila = [D.zonas[f[Z]], D.tiendas[f[T]], D.materiales[f[M]], D.textos[f[X]], D.marcas[f[MA]],
-      D.categorias[f[CA]], D.subcats[f[SC]], f[PN]??'', f[VR]??''];
+      D.categorias[f[CA]], D.subcats[f[SC]],
+      f[MV]>=0?D.marcasVehiculo[f[MV]]:'', f[MO]>=0?D.modelos[f[MO]]:'', f[MT]>=0?D.motores[f[MT]]:'',
+      f[AN]>=0?D.anios[f[AN]]:'', aniosAp,
+      f[ST]??'', f[PN]??'', f[VR]??''];
     return fila.map(v=>/[;"\n]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':v).join(';');
   });
   const blob = new Blob(['﻿'+[cab.join(';'), ...filas].join('\r\n')], {type:'text/csv;charset=utf-8'});
