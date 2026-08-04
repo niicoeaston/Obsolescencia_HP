@@ -255,6 +255,10 @@ td.precio{text-align:right;white-space:nowrap}
   padding:16px 16px 14px;
 }
 .tp-cabeza{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.tp-cabeza .tp-info{flex:1;min-width:0}
+.tp-cabeza .chip-subcat{
+  flex:0 0 auto;max-width:128px;white-space:normal;text-align:right;line-height:1.25;
+}
 .tp-titulo{font-size:15.5px;font-weight:700;line-height:1.3}
 .tp-cod{font-size:12.5px;color:var(--tenue);margin-top:2px}
 .tp-precio{border-top:1px solid var(--borde);margin-top:12px;padding-top:12px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
@@ -605,7 +609,7 @@ function tarjetaProdHtml(f, i){
   if (f[AN]>=0) detalle.push(`<div><b>Años:</b> ${esc(D.anios[f[AN]])}</div>`);
   return `<div class="tarjeta-prod">
     <div class="tp-cabeza">
-      <div>
+      <div class="tp-info">
         <div class="tp-titulo">${esc(D.textos[f[X]])}</div>
         <div class="tp-cod">${esc(D.materiales[f[M]])} · ${esc(D.marcas[f[MA]])}</div>
       </div>
