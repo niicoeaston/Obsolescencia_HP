@@ -105,18 +105,6 @@ button,input,select{font:inherit;color:inherit}
 .wordmark{flex:0 0 auto;display:flex;align-items:center}
 .wordmark img{height:34px;width:auto;display:block}
 @media(max-width:640px){.wordmark img{height:28px}}
-.tabs{display:flex;gap:4px;margin-left:8px}
-@media(max-width:640px){
-  .tabs{margin-left:-16px;order:4;flex:0 0 100%;border-top:1px solid var(--borde);padding:0 16px}
-}
-.tab{
-  appearance:none;border:0;background:transparent;cursor:pointer;
-  font-size:15px;font-weight:600;color:var(--tenue);
-  padding:8px 4px;border-bottom:2.5px solid transparent;
-  min-height:44px;
-}
-.tab[aria-selected="true"]{color:var(--rojo);border-bottom-color:var(--rojo)}
-.tab:hover{color:var(--tinta)}
 .topbar-meta{margin-left:auto;font-size:12.5px;color:var(--tenue);text-align:right;flex:0 0 auto}
 @media(max-width:640px){.topbar-meta{display:none}}
 .btn-tema{
@@ -346,34 +334,6 @@ td.precio{text-align:right;white-space:nowrap}
 .ayuda-pasos h3{margin:0 0 12px;font-size:15px}
 .ayuda-pasos ol{margin:0;padding-left:20px;font-size:14px;color:var(--tinta-2);line-height:1.9}
 
-/* ---------- Análisis ---------- */
-.analisis-grid{display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:28px;align-items:start}
-@media(max-width:860px){.analisis-grid{grid-template-columns:1fr}}
-.donut-caja{
-  background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
-  padding:24px;display:flex;flex-direction:column;align-items:center;gap:18px;
-}
-.donut-svg{width:100%;max-width:280px;height:auto}
-.donut-slice{cursor:pointer;transition:opacity .12s}
-.donut-slice:hover,.donut-slice.activa{opacity:.82}
-.donut-centro-valor{font-size:20px;font-weight:800;fill:var(--tinta)}
-.donut-centro-label{font-size:11px;fill:var(--tenue)}
-.leyenda{display:flex;flex-direction:column;gap:9px;width:100%}
-.leyenda-item{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer;padding:4px 6px;border-radius:6px}
-.leyenda-item:hover{background:var(--zebra)}
-.leyenda-dot{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
-.leyenda-nombre{flex:1;min-width:0}
-.leyenda-valor{color:var(--tenue);font-variant-numeric:tabular-nums;white-space:nowrap}
-.tabla-analisis{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden}
-.tabla-analisis table{font-size:14px}
-.tabla-analisis td.num,.tabla-analisis th.num{text-align:right;font-variant-numeric:tabular-nums}
-.tabla-analisis tfoot td{font-weight:800;border-top:1.5px solid var(--borde-fuerte);border-bottom:0}
-#tip-donut{
-  position:fixed;z-index:200;pointer-events:none;display:none;
-  background:var(--tinta);color:var(--plano);border-radius:8px;padding:8px 11px;font-size:12.5px;
-  max-width:220px;box-shadow:0 6px 20px rgba(0,0,0,.25);
-}
-
 /* ---------- Footer ---------- */
 footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
 .footer-interior{
@@ -393,10 +353,6 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
   <header class="topbar">
     <div class="topbar-fila">
       <div class="wordmark"><img src="data:image/png;base64,__LOGO_AUTOPLANET__" alt="Autoplanet"></div>
-      <nav class="tabs" role="tablist" aria-label="Secciones">
-        <button class="tab" role="tab" id="tab-consulta" aria-selected="true" type="button">Consulta</button>
-        <button class="tab" role="tab" id="tab-analisis" aria-selected="false" type="button">Análisis</button>
-      </nav>
       <div class="topbar-meta" id="meta-datos">&nbsp;</div>
       <button class="btn-tema" id="btnTema" type="button">Tema</button>
     </div>
@@ -532,31 +488,6 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
     </div>
   </section>
 
-  <!-- ============================= ANÁLISIS ============================= -->
-  <section id="vista-analisis" hidden>
-    <div class="envoltura" style="padding-top:32px">
-      <h2 style="font-size:24px;margin:0 0 4px">Stock valorizado por zona</h2>
-      <p style="color:var(--tinta-2);margin:0 0 24px;max-width:640px">
-        Valorización oficial por zona (fuente: Resumen (2), Distribución por zona). Vista de referencia general de la campaña, no reemplaza la consulta por tienda.
-      </p>
-
-      <div class="analisis-grid">
-        <div class="donut-caja">
-          <svg class="donut-svg" id="donutSvg" viewBox="0 0 220 220" role="img" aria-label="Distribución de stock valorizado por zona"></svg>
-          <div class="leyenda" id="leyendaDonut"></div>
-          <p style="font-size:11.5px;color:var(--tenue);margin:2px 0 0;text-align:center">Las zonas con menor participación se agrupan en "Otras zonas" en el gráfico. La tabla muestra el detalle de cada una.</p>
-        </div>
-        <div class="tabla-analisis">
-          <table>
-            <thead><tr><th>Zona</th><th class="num">Stock valorizado</th><th class="num">Participación</th></tr></thead>
-            <tbody id="cuerpoAnalisis"></tbody>
-            <tfoot><tr><td>Total nacional</td><td class="num" id="totalAnalisis"></td><td class="num">100%</td></tr></tfoot>
-          </table>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <footer>
     <div class="footer-interior">
       <div class="footer-marca">
@@ -567,8 +498,6 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
     </div>
   </footer>
 </div>
-
-<div id="tip-donut"></div>
 
 <script>
 const D = /*__DATOS__*/null;
@@ -942,18 +871,6 @@ $('btnDescargar').addEventListener('click', ()=>{
   setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
 });
 
-/* ---------------- pestañas ---------------- */
-function mostrarVista(cual){
-  const esConsulta = cual==='consulta';
-  $('vista-consulta').hidden = !esConsulta;
-  $('vista-analisis').hidden = esConsulta;
-  $('tab-consulta').setAttribute('aria-selected', String(esConsulta));
-  $('tab-analisis').setAttribute('aria-selected', String(!esConsulta));
-  if (!esConsulta && !window.__donutPintado){ pintarAnalisis(); window.__donutPintado = true; }
-}
-$('tab-consulta').addEventListener('click', ()=>mostrarVista('consulta'));
-$('tab-analisis').addEventListener('click', ()=>mostrarVista('analisis'));
-
 /* ---------------- tema ---------------- */
 const temaGuardado = localStorage.getItem('ap-tema');
 if (temaGuardado) document.documentElement.setAttribute('data-theme', temaGuardado);
@@ -963,103 +880,7 @@ $('btnTema').addEventListener('click', ()=>{
   const siguiente = oscuroActivo ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', siguiente);
   localStorage.setItem('ap-tema', siguiente);
-  if (window.__donutPintado) pintarAnalisis();
 });
-
-/* ---------------- Análisis: donut SVG ---------------- */
-function colorVar(nombre){
-  return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim();
-}
-const PALETA_ZONA = {
-  // orden fijo: 5 zonas geograficas reales + gris para "Otras / Nacional"
-  claro:  ['#2a78d6','#1f8a3d','#9333ea','#b8860b','#d6336c','#9a9a9a'],
-  oscuro: ['#3987e5','#2f9e44','#a855c9','#c98500','#e8476e','#a3a3a3'],
-};
-function coloresActuales(){
-  const oscuro = document.documentElement.getAttribute('data-theme')==='dark'
-    || (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
-  return oscuro ? PALETA_ZONA.oscuro : PALETA_ZONA.claro;
-}
-
-function pintarAnalisis(){
-  const datos = D.analisis; // [{zona, valor}], ya ordenado desc por Python -- TODAS las zonas, para la tabla
-  const colores = coloresActuales();
-  const total = datos.reduce((s,d)=>s+d.valor,0);
-  const cx=110, cy=110, rExt=95, rInt=58, gap=0.014; // gap en radianes entre segmentos
-
-  // El donut solo distingue con claridad hasta ~5-6 colores (mas que eso, dos
-  // colores terminan repitiendose y dos zonas distintas se verian iguales).
-  // Las zonas top-5 se colorean individualmente; el resto se agrupa en un
-  // solo segmento gris "Otras zonas". La TABLA de abajo si lista cada zona
-  // por separado, sin agrupar nada.
-  const MAX_SEGMENTOS = colores.length - 1; // ultimo color reservado para "Otras"
-  const principales = datos.slice(0, MAX_SEGMENTOS);
-  const resto = datos.slice(MAX_SEGMENTOS);
-  const paraGrafico = principales.slice();
-  if (resto.length){
-    paraGrafico.push({
-      zona: resto.length === 1 ? resto[0].zona : `Otras zonas (${resto.length})`,
-      valor: resto.reduce((s,d)=>s+d.valor,0),
-      agrupada: resto.length > 1,
-    });
-  }
-
-  let anguloAcum = -Math.PI/2;
-  const svg = $('donutSvg');
-  let piezas = '';
-  paraGrafico.forEach((d,i)=>{
-    const frac = total? d.valor/total : 0;
-    const barrido = Math.max(0, frac*Math.PI*2 - gap);
-    const a0 = anguloAcum + gap/2, a1 = a0 + barrido;
-    const col = colores[i % colores.length];
-    const pIni = [cx+rExt*Math.cos(a0), cy+rExt*Math.sin(a0)];
-    const pFin = [cx+rExt*Math.cos(a1), cy+rExt*Math.sin(a1)];
-    const pIniI = [cx+rInt*Math.cos(a1), cy+rInt*Math.sin(a1)];
-    const pFinI = [cx+rInt*Math.cos(a0), cy+rInt*Math.sin(a0)];
-    const largo = (a1-a0) > Math.PI ? 1 : 0;
-    const d_path = `M${pIni[0]},${pIni[1]} A${rExt},${rExt} 0 ${largo} 1 ${pFin[0]},${pFin[1]}
-                    L${pIniI[0]},${pIniI[1]} A${rInt},${rInt} 0 ${largo} 0 ${pFinI[0]},${pFinI[1]} Z`;
-    piezas += `<path class="donut-slice" d="${d_path}" fill="${col}" data-i="${i}"><title>${esc(d.zona)}: ${clp(d.valor)} (${(frac*100).toFixed(1)}%)</title></path>`;
-    // etiqueta directa si el segmento es grande
-    if (frac >= 0.09){
-      const am = (a0+a1)/2, rLbl = (rExt+rInt)/2 + 4;
-      const lx = cx+rLbl*Math.cos(am), ly = cy+rLbl*Math.sin(am);
-      piezas += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="#fff" pointer-events="none">${Math.round(frac*100)}%</text>`;
-    }
-    anguloAcum += frac*Math.PI*2;
-  });
-  piezas += `<text x="${cx}" y="${cy-6}" text-anchor="middle" class="donut-centro-valor">${clp(total).replace('$','$ ')}</text>`;
-  piezas += `<text x="${cx}" y="${cy+14}" text-anchor="middle" class="donut-centro-label">Total nacional</text>`;
-  svg.innerHTML = piezas;
-
-  const tip = $('tip-donut');
-  svg.querySelectorAll('.donut-slice').forEach(el=>{
-    const d = paraGrafico[+el.dataset.i];
-    const frac = total? d.valor/total : 0;
-    el.addEventListener('mousemove', e=>{
-      tip.innerHTML = `<b>${esc(d.zona)}</b><br>${clp(d.valor)} · ${(frac*100).toFixed(1)}%`;
-      tip.style.display='block';
-      let x=e.clientX+14, y=e.clientY+14;
-      tip.style.left=x+'px'; tip.style.top=y+'px';
-    });
-    el.addEventListener('mouseleave', ()=>tip.style.display='none');
-  });
-
-  $('leyendaDonut').innerHTML = paraGrafico.map((d,i)=>{
-    const frac = total? d.valor/total : 0;
-    return `<div class="leyenda-item" data-i="${i}">
-      <span class="leyenda-dot" style="background:${colores[i%colores.length]}"></span>
-      <span class="leyenda-nombre">${esc(d.zona)}</span>
-      <span class="leyenda-valor">${(frac*100).toFixed(1)}%</span>
-    </div>`;
-  }).join('');
-
-  $('cuerpoAnalisis').innerHTML = datos.map(d=>{
-    const frac = total? d.valor/total : 0;
-    return `<tr><td>${esc(d.zona)}</td><td class="num">${clp(d.valor)}</td><td class="num">${(frac*100).toFixed(1)}%</td></tr>`;
-  }).join('');
-  $('totalAnalisis').textContent = clp(total);
-}
 
 /* ---------------- arranque ---------------- */
 $('meta-datos').innerHTML = `Datos actualizados: ${esc(D.info.fecha)}`;

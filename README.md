@@ -23,9 +23,8 @@ filtros son para acotar, no para desbloquear resultados.
 |---|---|
 | **`index.html`** | El sitio publicado. Un solo archivo autónomo (datos incluidos). **No se edita a mano** — se regenera con el script. |
 | `plantilla_portal.html` | La plantilla real: HTML + CSS + JS. Aquí se edita el diseño o el comportamiento. |
-| `generar_portal.py` | Lee los dos Excel (listado de productos + resumen de zonas), arma los datos y produce `index.html` a partir de la plantilla. |
+| `generar_portal.py` | Lee el Excel del listado de productos, arma los datos y produce `index.html` a partir de la plantilla. |
 | `anios.py` | Interpreta la columna Año (rangos abiertos, años sueltos, formatos varios) sin nunca duplicar filas. Ver sección 3. |
-| `resumen_zona.py` | Lee el stock valorizado **oficial** por zona desde `Base No Estrategicos y obsoletos.xlsx`. Ver sección 4. |
 | `logo_grupo_planet_b64.txt` | Logo de Grupo Planet en base64 (footer). |
 | `logo_autoplanet_b64.txt` | Logo real de Autoplanet en base64 (header). |
 | `banner_hero_b64.txt` | Banner de Talleres Autoplanet en base64, re-comprimido a JPEG (fondo del hero). |
@@ -44,24 +43,19 @@ cd portal-web
 python generar_portal.py
 ```
 
-Esto lee **dos** archivos y regenera `index.html`:
+Esto lee **`../dashboard-obsolescencia/data/Listado Obsolecencia.xlsx`** (el
+mismo archivo que usa el dashboard interno) — el listado de productos, con
+las columnas de Marca del vehículo, Modelo, Motor y Año (formato V4) — y
+regenera `index.html` con los datos nuevos.
 
-1. **`../dashboard-obsolescencia/data/Listado Obsolecencia.xlsx`** (el mismo
-   archivo que usa el dashboard interno) — el listado de productos, ahora
-   con las columnas de Marca del vehículo, Modelo, Motor y Año (formato V4).
-2. **`Base No Estrategicos y obsoletos.xlsx`** (en la raíz del proyecto,
-   hoja `Resumen (2)`) — de aquí sale el número **oficial** de stock
-   valorizado por zona que se muestra en la pestaña Análisis (ver sección 4).
+El script imprime en pantalla cualquier advertencia (productos sin
+marca/modelo/motor/año, tiendas con más de una zona, años no interpretables)
+para que puedas revisarlo antes de publicar.
 
-El script imprime en pantalla el reparto de stock valorizado por zona y
-cualquier advertencia (productos sin marca/modelo/motor/año, discrepancias
-en el resumen de zonas) para que puedas revisarlo antes de publicar.
-
-**Para reemplazar el Excel mensual del listado:** sigue las instrucciones de
+**Para reemplazar el Excel mensual:** sigue las instrucciones de
 `../dashboard-obsolescencia/README.md` (reemplazar el archivo en esa carpeta
-`data/`, manteniendo el nombre). Si también cambia el archivo de resumen de
-zonas, reemplázalo en la raíz del proyecto manteniendo el nombre y la hoja
-`Resumen (2)`. Luego vuelve a correr el comando de arriba desde `portal-web/`.
+`data/`, manteniendo el nombre). Luego vuelve a correr el comando de arriba
+desde `portal-web/`.
 
 ### Publicar la actualización
 
@@ -139,36 +133,7 @@ normalmente si no se filtra por año.
 
 ---
 
-## 4. Stock valorizado oficial por zona (pestaña Análisis)
-
-**Cambio importante en V4**: el número que se muestra en el donut y la
-tabla de la pestaña Análisis ya **no se calcula** en este proyecto (antes
-era `stock disponible × valor remate con IVA`, sumado producto por
-producto). Ahora se lee **tal cual** desde el archivo oficial `Base No
-Estrategicos y obsoletos.xlsx`, hoja `Resumen (2)`, en la tabla dinámica
-titulada "Distribución por zona" (columna H en ese archivo).
-
-Motivo del cambio: ese número calculado no coincidía con el número oficial
-del negocio — se rastreó la diferencia hasta la fórmula real de esa hoja
-(`Stock_Valorizado_AP = Stock AP × Costo unitario`, es decir, a **costo**,
-no al precio de remate/liquidación). Son dos métricas legítimas y
-distintas (costo vs. precio de venta de liquidación); esta sección del
-portal ahora muestra la oficial del negocio en lugar de recalcular una
-propia.
-
-`resumen_zona.py` busca el título "Distribución por zona" en la hoja **sin
-asumir una fila o columna fija** (por si el archivo cambia de forma), y
-lee las filas hasta la primera vacía. Se detectó que la hoja `Resumen (2)`
-tiene en realidad **dos bloques** con ese mismo título (columnas H y AK) y
-sus totales **no coinciden** ($393.718.464 vs $309.057.215, diferencia de
-$84.661.249). Se usa el bloque de la columna H (el pedido explícitamente) y
-la diferencia con el otro bloque se deja registrada como advertencia en la
-consola al generar el sitio — este proyecto no decide cuál "está bien",
-eso le corresponde al negocio.
-
----
-
-## 5. La columna Zona: historia y estado actual
+## 4. La columna Zona: historia y estado actual
 
 **Ya está resuelto — usa la columna `Zona` del Excel tal cual.** Queda esta
 sección para que quede constancia de por qué, si en algún momento vuelve a
@@ -198,7 +163,7 @@ desaparece en silencio.
 
 ---
 
-## 6. Arquitectura y por qué
+## 5. Arquitectura y por qué
 
 **Un solo archivo HTML estático**, sin backend, sin build, publicado en
 **GitHub Pages**, gratuito, sin servidor que mantener.
@@ -244,7 +209,7 @@ proporciones distintas, hay que volver a ajustar esos valores a ojo.
 
 ---
 
-## 7. Qué se dejó fuera de la vista principal (a propósito)
+## 6. Qué se dejó fuera de la vista principal (a propósito)
 
 Sin tarjetas KPI, sin gráfico de Top 12 subcategorías/marcas, sin columna
 de descuento % ni "Total remate" en el listado de productos. El **valor
@@ -263,17 +228,13 @@ colapsable y en una fila expandible "Ver detalle" respectivamente — no en
 la vista principal — para no convertir esto en un formulario largo (ver
 sección 3).
 
-La sección **Análisis** (pestaña aparte, no la vista principal) muestra el
-stock valorizado **oficial** por zona (sección 4) en un donut + tabla de
-participación. Con 11 zonas reales, el donut solo colorea distinto las 5
-más grandes y agrupa el resto en un segmento gris "Otras zonas" (más de
-~5-6 colores en un gráfico circular deja de ser legible y dos colores
-empiezan a repetirse). La **tabla de abajo nunca agrupa**: siempre lista
-las 11 zonas por separado con su valor exacto.
+No hay una sección de análisis/gráficos aparte: el portal es solo
+consulta y descarga del listado de productos, sin una vista de agregados
+por zona.
 
 ---
 
-## 8. Seguridad y qué expone el sitio
+## 7. Seguridad y qué expone el sitio
 
 El repositorio y el sitio son **públicos** (requisito del hosting gratuito
 de GitHub Pages) — indexable por buscadores, sin login. Por diseño, el
@@ -286,7 +247,7 @@ información comercial sensible.
 
 ---
 
-## 9. Pruebas realizadas
+## 8. Pruebas realizadas
 
 - Recorrido completo Zona → Tienda → Subcategoría → Marca/Modelo/Año →
   resultados, con datos reales V4 (17.594 productos, 88 tiendas, 11 zonas
@@ -317,10 +278,7 @@ información comercial sensible.
   mostrando el mismo contenido en ambos; producto sin aplicación muestra
   el texto de respaldo "Información no disponible" en vez de dejar el
   espacio vacío o mostrar "nan".
-- Sección Análisis: donut agrupado (top 5 + "Otras zonas") + tabla completa
-  sin agrupar, coinciden los números y suman el total oficial
-  ($393.718.464) leído de `Resumen (2)`.
-- Tema claro/oscuro, incluido el donut repintándose con paleta distinta.
+- Tema claro/oscuro.
 - Anchos móviles 390×844 sin desborde horizontal, incluyendo el bloque
   colapsable de filtros de aplicación.
 - Tablet (768px): tabla simplificada (sin columna Marca, padding reducido,
@@ -329,7 +287,7 @@ información comercial sensible.
 - **Verificado en el sitio publicado real** (los dos links), no solo en
   local.
 
-## 10. Limitaciones conocidas
+## 9. Limitaciones conocidas
 
 - La exportación es **solo CSV** (se abre perfecto en Excel en español, con
   `;` y BOM). No se generó un `.xlsx` real para evitar sumar una
@@ -343,7 +301,3 @@ información comercial sensible.
   en `plantilla_portal.html`.
 - Dos sitios publicados (misma cuenta) significa dos `git push` cada vez
   que se actualizan los datos — si se olvida uno, quedan desincronizados.
-- La hoja `Resumen (2)` tiene dos bloques "Distribución por zona" con
-  totales distintos (ver sección 4); este proyecto usa el de la columna H
-  y deja la discrepancia como advertencia, sin resolverla — es una
-  decisión que le corresponde al negocio, no a este portal.

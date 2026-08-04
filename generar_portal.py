@@ -4,8 +4,7 @@ Genera el portal comercial de liquidacion (index.html autonomo).
 ==================================================================
 V4: agrega filtros de Marca del vehiculo / Modelo / Anio, apertura de
 rangos de anios (solo para filtrar/buscar, nunca duplica stock ni
-valorizacion), y usa el stock valorizado OFICIAL de "Base No Estrategicos
-y obsoletos.xlsx" (hoja "Resumen (2)") en vez de calcularlo.
+valorizacion).
 
 Reutiliza el procesador de datos ya probado (dashboard-obsolescencia/src).
 La columna Zona del Excel viene corregida (una zona unica por tienda, sin
@@ -33,17 +32,12 @@ sys.path.insert(0, str(RAIZ_STREAMLIT))
 from src.services import cargador_excel as datos  # noqa: E402
 
 import anios  # noqa: E402
-import resumen_zona  # noqa: E402
 
 PLANTILLA = RAIZ_PORTAL / "plantilla_portal.html"
 SALIDA = RAIZ_PORTAL / "index.html"
 LOGO_GRUPO_PLANET_B64 = (RAIZ_PORTAL / "logo_grupo_planet_b64.txt").read_text().strip()
 LOGO_AUTOPLANET_B64 = (RAIZ_PORTAL / "logo_autoplanet_b64.txt").read_text().strip()
 BANNER_HERO_B64 = (RAIZ_PORTAL / "banner_hero_b64.txt").read_text().strip()
-
-# Archivo oficial de valorizacion por zona (ver seccion 3 del README).
-ARCHIVO_RESUMEN_ZONA = RAIZ_PROYECTO / "Base No Estrategicos y obsoletos.xlsx"
-HOJA_RESUMEN_ZONA = "Resumen (2)"
 
 # Orden en que se ofrecen las zonas en el selector: geograficas de norte a
 # sur primero, luego las no geograficas. Cualquier zona nueva que aparezca
@@ -202,24 +196,6 @@ def main() -> int:
     for f in filas:
         f[0] = permutacion[f[0]]
 
-    # --- Stock valorizado OFICIAL por zona (seccion 14 del pedido) ---------
-    print(f"\nLeyendo stock valorizado oficial de "
-          f"'{ARCHIVO_RESUMEN_ZONA.name}' -> hoja '{HOJA_RESUMEN_ZONA}'...")
-    res_zona = resumen_zona.leer(ARCHIVO_RESUMEN_ZONA, HOJA_RESUMEN_ZONA)
-    analisis = [
-        {"zona": z, "valor": round(v)}
-        for z, v, _pct in res_zona.bloque_usado.filas
-        if v is not None
-    ]
-    analisis.sort(key=lambda x: -x["valor"])
-    total_oficial = res_zona.bloque_usado.total_general
-    print(f"  {len(analisis)} zonas leidas. Total oficial: ${total_oficial:,.0f}")
-    for a in analisis:
-        print(f"    {a['zona']:22s} ${a['valor']:>15,.0f}  {a['valor']/total_oficial*100:5.1f}%")
-    for adv in res_zona.advertencias:
-        print("  AVISO:", adv)
-        advertencias_generales.append(adv)
-
     # --- Reporte final de advertencias -------------------------------------
     if advertencias_generales:
         print(f"\n{'='*70}\nADVERTENCIAS ({len(advertencias_generales)}):")
@@ -243,11 +219,8 @@ def main() -> int:
         "anios": d_anio.lista,
         "aniosPorIndice": anios_por_indice,
         "filas": filas,
-        "analisis": analisis,
-        "analisisTotalOficial": round(total_oficial) if total_oficial else None,
         "info": {
             "archivo": resultado.archivo.name,
-            "archivoResumen": ARCHIVO_RESUMEN_ZONA.name,
             "fecha": datetime.fromtimestamp(marca_tiempo).strftime("%d-%m-%Y"),
             "marcaTiempo": int(marca_tiempo * 1000),
             "totalTiendas": int(df["tienda_label"].nunique()),
