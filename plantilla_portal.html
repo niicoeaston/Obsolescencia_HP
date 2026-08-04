@@ -102,9 +102,9 @@ button,input,select{font:inherit;color:inherit}
 @media(max-width:640px){
   .topbar-fila{padding:10px 16px 0;gap:10px}
 }
-.wordmark{font-size:21px;font-weight:800;letter-spacing:-.01em;white-space:nowrap;flex:0 0 auto}
-.wordmark .auto{color:var(--tinta)}
-.wordmark .planet{color:var(--rojo-marca)}
+.wordmark{flex:0 0 auto;display:flex;align-items:center}
+.wordmark img{height:34px;width:auto;display:block}
+@media(max-width:640px){.wordmark img{height:28px}}
 .tabs{display:flex;gap:4px;margin-left:8px}
 @media(max-width:640px){
   .tabs{margin-left:-16px;order:4;flex:0 0 100%;border-top:1px solid var(--borde);padding:0 16px}
@@ -153,7 +153,8 @@ button,input,select{font:inherit;color:inherit}
   margin:-56px 0 0; padding:22px 24px 18px; position:relative; z-index:5;
 }
 @media(max-width:640px){.tarjeta-filtros{margin-top:-48px;padding:18px 16px 14px}}
-.fila-filtros{display:grid;grid-template-columns:repeat(3,1fr) 1.3fr auto;gap:14px;align-items:end}
+.fila-filtros{display:grid;grid-template-columns:repeat(3,1fr) 1.3fr auto;gap:14px;align-items:start}
+.fila-filtros .link-limpiar{margin-top:29px}
 @media(max-width:980px){.fila-filtros{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){.fila-filtros{grid-template-columns:1fr}}
 .campo{display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -338,7 +339,7 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
 
   <header class="topbar">
     <div class="topbar-fila">
-      <div class="wordmark"><span class="auto">Auto</span><span class="planet">Planet</span></div>
+      <div class="wordmark"><img src="data:image/png;base64,__LOGO_AUTOPLANET__" alt="Autoplanet"></div>
       <nav class="tabs" role="tablist" aria-label="Secciones">
         <button class="tab" role="tab" id="tab-consulta" aria-selected="true" type="button">Consulta</button>
         <button class="tab" role="tab" id="tab-analisis" aria-selected="false" type="button">Análisis</button>

@@ -33,7 +33,8 @@ import zona_tienda  # noqa: E402
 
 PLANTILLA = RAIZ_PORTAL / "plantilla_portal.html"
 SALIDA = RAIZ_PORTAL / "index.html"
-LOGO_B64 = (RAIZ_PORTAL / "logo_grupo_planet_b64.txt").read_text().strip()
+LOGO_GRUPO_PLANET_B64 = (RAIZ_PORTAL / "logo_grupo_planet_b64.txt").read_text().strip()
+LOGO_AUTOPLANET_B64 = (RAIZ_PORTAL / "logo_autoplanet_b64.txt").read_text().strip()
 
 
 class Diccionario:
@@ -161,7 +162,8 @@ def main() -> int:
         r".normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')",
         html,
     )
-    html = html.replace("__LOGO_GRUPO_PLANET__", LOGO_B64)
+    html = html.replace("__LOGO_GRUPO_PLANET__", LOGO_GRUPO_PLANET_B64)
+    html = html.replace("__LOGO_AUTOPLANET__", LOGO_AUTOPLANET_B64)
     datos_js = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     html = html.replace("/*__DATOS__*/null", datos_js)
 
