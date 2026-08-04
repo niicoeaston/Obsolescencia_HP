@@ -9,9 +9,11 @@ que actualizar ambos cuando cambien los datos, ver sección 2).
 
 Página web comercial (no un dashboard) para que supervisores de tienda,
 equipos comerciales y clientes de taller consulten qué productos están en
-liquidación por obsolescencia y a qué precio. Recorrido: **Zona → Tienda →
-Subcategoría → [Marca del vehículo → Modelo → Año, opcional] → listado de
-productos**, con descarga del resultado filtrado.
+liquidación por obsolescencia y a qué precio. Recorrido: **Zona → listado de
+productos** (de todas las tiendas de la zona), acotando opcionalmente por
+**Tienda → Subcategoría → Marca del vehículo → Modelo → Año**, con descarga
+del resultado filtrado. Solo la Zona es obligatoria; el resto de los
+filtros son para acotar, no para desbloquear resultados.
 
 ---
 
@@ -289,6 +291,16 @@ información comercial sensible.
 - Recorrido completo Zona → Tienda → Subcategoría → Marca/Modelo/Año →
   resultados, con datos reales V4 (17.594 productos, 88 tiendas, 11 zonas
   reales, 178 subcategorías).
+- **Resultados con solo la Zona seleccionada** (sin Tienda): se ven los
+  productos de todas las tiendas de esa zona a la vez, con una columna
+  "Tienda" nueva en la tabla (y una línea equivalente en la tarjeta móvil)
+  para identificar de qué tienda es cada producto; los filtros de
+  Marca/Modelo/Año y la descarga CSV funcionan igual de bien cruzando
+  varias tiendas. Se corrigió un problema real de layout en tablet (768px)
+  donde el nombre de la subcategoría se superponía con la columna Stock
+  cuando Tienda y Subcategoría se mostraban a la vez sin acotar (causado
+  por un orden de reglas CSS invertido); ahora ambas etiquetas se acotan en
+  ancho y saltan de línea en vez de desbordar.
 - Buscador, orden (incluido ordenar por Stock disponible), "Ver todas las
   subcategorías", descarga CSV con las columnas nuevas (Marca vehículo,
   Modelo, Motor, Rango de años original, Años aperturados, Stock

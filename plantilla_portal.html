@@ -271,18 +271,26 @@ tbody tr.fila-detalle:hover td{background:var(--plano) !important}
 td.cod{color:var(--tinta-2);font-size:13px;white-space:nowrap}
 td.desc{font-weight:600;min-width:220px}
 td.marca{color:var(--tinta-2)}
-/* Tabla simplificada en tablet: el precio (dato mas importante) siempre
-   visible sin scroll horizontal; Marca se oculta en este rango angosto. */
-@media(max-width:980px) and (min-width:768px){
-  th.col-marca, td.marca{display:none}
-  td.desc{min-width:150px}
-  thead th, tbody td{padding-left:10px;padding-right:10px}
-  .btn-detalle-fila{padding:6px 9px;font-size:0}
-  .btn-detalle-fila .chev{font-size:15px;font-weight:800}
-}
 .chip-subcat{
   display:inline-block;padding:3px 11px;border-radius:999px;background:var(--naranja-suave);
   color:var(--naranja);font-size:12px;font-weight:700;white-space:nowrap;
+}
+.chip-tienda{
+  display:inline-block;max-width:150px;padding:3px 11px;border-radius:999px;background:var(--plano);
+  color:var(--tinta-2);font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+/* Tabla simplificada en tablet: el precio (dato mas importante) siempre
+   visible sin scroll horizontal; Marca se oculta en este rango angosto y
+   las etiquetas de Tienda/Subcategoria se acotan (con salto de linea, para
+   que quepan) porque en este ancho pueden estar ambas visibles a la vez. */
+@media(max-width:980px) and (min-width:768px){
+  th.col-marca, td.marca{display:none}
+  td.desc{min-width:130px}
+  thead th, tbody td{padding-left:8px;padding-right:8px}
+  .btn-detalle-fila{padding:6px 9px;font-size:0}
+  .btn-detalle-fila .chev{font-size:15px;font-weight:800}
+  .chip-tienda{max-width:90px;white-space:normal;line-height:1.2}
+  .chip-subcat{max-width:100px;white-space:normal;line-height:1.2;text-align:left}
 }
 td.precio{text-align:right;white-space:nowrap}
 .precio-normal{display:block;font-size:12.5px;color:var(--tenue);text-decoration:line-through}
@@ -304,6 +312,7 @@ td.precio{text-align:right;white-space:nowrap}
 }
 .tp-titulo{font-size:15.5px;font-weight:700;line-height:1.3}
 .tp-cod{font-size:12.5px;color:var(--tenue);margin-top:2px}
+.tp-tienda{font-size:12.5px;color:var(--tinta-2);margin-top:4px;font-weight:600}
 .tp-stock{font-size:12.5px;color:var(--tinta-2);margin-top:4px}
 .tp-stock b{color:var(--tinta);font-weight:700}
 .tp-precio{border-top:1px solid var(--borde);margin-top:12px;padding-top:12px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
@@ -398,7 +407,7 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
     <div class="hero">
       <div class="hero-interior">
         <h1>Liquidación de Productos en Obsolescencia</h1>
-        <p>Consulta los productos disponibles para liquidación según tu zona, tienda y subcategoría.</p>
+        <p>Consulta los productos disponibles para liquidación según tu zona; acota por tienda y subcategoría si quieres.</p>
         <span class="paso" id="paso-actual">Selecciona tu zona para comenzar</span>
       </div>
     </div>
@@ -418,7 +427,7 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
           <div class="campo">
             <label for="fSubcat">Subcategoría</label>
             <select id="fSubcat" disabled></select>
-            <span class="ayuda" id="ayuda-subcat">Selecciona primero tu tienda</span>
+            <span class="ayuda" id="ayuda-subcat">Selecciona primero tu zona</span>
           </div>
         </div>
 
@@ -495,6 +504,7 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
               <th>Material</th>
               <th>Texto breve del material</th>
               <th class="col-marca">Marca</th>
+              <th id="th-tienda">Tienda</th>
               <th id="th-subcat">Subcategoría</th>
               <th class="der">Stock</th>
               <th class="der">Precio</th>
@@ -513,9 +523,9 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
       <div class="ayuda-pasos">
         <h3>¿Cómo funciona?</h3>
         <ol>
-          <li>Selecciona tu zona.</li>
-          <li>Selecciona tu tienda.</li>
-          <li>Elige una subcategoría (o mira todas).</li>
+          <li>Selecciona tu zona (verás los productos de todas sus tiendas).</li>
+          <li>Si quieres acotar, elige una tienda (opcional).</li>
+          <li>Filtra por subcategoría, marca, modelo o año (opcional).</li>
           <li>Descarga el listado si lo necesitas.</li>
         </ol>
       </div>
@@ -621,25 +631,25 @@ function opcionesTienda(){
   return D.tiendas.filter((_,i)=>vistos.has(i));
 }
 function opcionesSubcat(){
-  if (!estado.tienda) return [];
+  if (!estado.zona) return [];
   const base = filtrar('subcat');
   const vistos = new Set(base.map(f=>f[SC]));
   return D.subcats.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
 }
 function opcionesMarcaVeh(){
-  if (!estado.tienda) return [];
+  if (!estado.zona) return [];
   const base = filtrar('marcaVeh');
   const vistos = new Set(base.map(f=>f[MV]).filter(i=>i>=0));
   return D.marcasVehiculo.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
 }
 function opcionesModelo(){
-  if (!estado.tienda) return [];
+  if (!estado.zona) return [];
   const base = filtrar('modelo');
   const vistos = new Set(base.map(f=>f[MO]).filter(i=>i>=0));
   return D.modelos.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
 }
 function opcionesAnio(){
-  if (!estado.tienda) return [];
+  if (!estado.zona) return [];
   const base = filtrar('anio');
   const anios = new Set();
   base.forEach(f => aniosDeFila(f).forEach(a => anios.add(a)));
@@ -660,20 +670,21 @@ function mensajeHtml(texto, tipo, icono){
 function pintarMensajes(filas){
   const msgs = [];
   if (!estado.zona){
-    msgs.push(mensajeHtml('Selecciona una <b>zona</b> para ver las tiendas disponibles.', 'dato', 'ℹ️'));
+    msgs.push(mensajeHtml('Selecciona una <b>zona</b> para ver los productos disponibles.', 'dato', 'ℹ️'));
   } else if (!estado.tienda){
     const n = opcionesTienda().length;
-    msgs.push(mensajeHtml(`<b>${esc(estado.zona)}</b>: ${n} ${n===1?'tienda':'tiendas'} con productos en liquidación. Selecciona tu <b>tienda</b>.`, 'dato', 'ℹ️'));
+    msgs.push(mensajeHtml(`Mostrando productos de <b>toda ${esc(estado.zona)}</b> (${n} ${n===1?'tienda':'tiendas'}). Selecciona una <b>tienda</b> para acotar.`, 'dato', 'ℹ️'));
   }
-  if (estado.tienda){
+  if (estado.zona){
+    const lugar = estado.tienda || estado.zona;
     const sinPrecio = filas.filter(f=>f[VR]===null).length;
     if (sinPrecio) msgs.push(mensajeHtml(`<b>${num(sinPrecio)}</b> producto(s) sin valor remate se muestran como «Precio pendiente».`, 'aviso', '⚠️'));
-    if (estado.tienda && !estado.subcat && !estado.q && filas.length===0){
-      msgs.push(mensajeHtml(`La tienda <b>${esc(estado.tienda)}</b> no tiene productos en liquidación en este momento.`, 'aviso', '⚠️'));
+    if (!estado.subcat && !estado.q && filas.length===0){
+      msgs.push(mensajeHtml(`<b>${esc(lugar)}</b> no tiene productos en liquidación en este momento.`, 'aviso', '⚠️'));
     } else if (estado.subcat && filas.length===0){
-      msgs.push(mensajeHtml(`No hay productos de <b>${esc(estado.subcat)}</b> en ${esc(estado.tienda)}. Prueba otra subcategoría o usa «Ver todas las subcategorías».`, 'aviso', '⚠️'));
+      msgs.push(mensajeHtml(`No hay productos de <b>${esc(estado.subcat)}</b> en ${esc(lugar)}. Prueba otra subcategoría o usa «Ver todas las subcategorías».`, 'aviso', '⚠️'));
     } else if (estado.q && filas.length===0){
-      msgs.push(mensajeHtml(`La búsqueda «${esc(estado.q)}» no encontró productos en ${esc(estado.tienda)}.`, 'aviso', '⚠️'));
+      msgs.push(mensajeHtml(`La búsqueda «${esc(estado.q)}» no encontró productos en ${esc(lugar)}.`, 'aviso', '⚠️'));
     }
   }
   $('mensajes').innerHTML = msgs.join('');
@@ -711,17 +722,23 @@ function contenidoDetalle(f){
   if (!campos.length) campos.push(['Aplicación vehicular', 'Información no disponible']);
   return campos;
 }
-function filaTablaHtml(f, mostrarSubcat, i){
+function tiendaCorta(f){
+  const t = D.tiendas[f[T]];
+  const i = t.indexOf('–');
+  return i>=0 ? t.slice(i+1).trim() : t;
+}
+function filaTablaHtml(f, mostrarSubcat, mostrarTienda, i){
   const precio = f[VR]===null
     ? `<span class="precio-remate pendiente">Precio pendiente</span>`
     : `${f[PN]?`<span class="precio-normal">${clp(f[PN])}</span>`:''}<span class="precio-remate">${clp(f[VR])}</span>`;
   const campos = contenidoDetalle(f);
-  const colspan = 7;
+  const colspan = 8;
   const clasePar = (i%2===0) ? ' fila-par' : '';
   return `<tr class="fila-prod${clasePar}">
     <td class="cod">${esc(D.materiales[f[M]])}</td>
     <td class="desc">${esc(D.textos[f[X]])}</td>
     <td class="marca">${esc(D.marcas[f[MA]])}</td>
+    <td>${mostrarTienda?`<span class="chip-tienda" title="${esc(D.tiendas[f[T]])}">${esc(tiendaCorta(f))}</span>`:'<span style="color:var(--tenue)">—</span>'}</td>
     <td>${mostrarSubcat?`<span class="chip-subcat">${esc(D.subcats[f[SC]])}</span>`:'<span style="color:var(--tenue)">—</span>'}</td>
     <td class="der stock">${num(f[ST])}</td>
     <td class="precio">${precio}</td>
@@ -735,17 +752,19 @@ function filaTablaHtml(f, mostrarSubcat, i){
     </td>
   </tr>`;
 }
-function tarjetaProdHtml(f, i){
+function tarjetaProdHtml(f, i, mostrarTienda){
   const precio = f[VR]===null
     ? `<span class="valor pendiente">Precio pendiente</span>`
     : `<span class="valor">${clp(f[VR])}</span>`;
   const normal = (f[VR]!==null && f[PN]) ? `<div>Normal ${clp(f[PN])}</div>` : '';
   const campos = contenidoDetalle(f);
+  const tiendaLinea = mostrarTienda ? `<div class="tp-tienda">${esc(D.tiendas[f[T]])}</div>` : '';
   return `<div class="tarjeta-prod">
     <div class="tp-cabeza">
       <div class="tp-info">
         <div class="tp-titulo">${esc(D.textos[f[X]])}</div>
         <div class="tp-cod">${esc(D.materiales[f[M]])} · ${esc(D.marcas[f[MA]])}</div>
+        ${tiendaLinea}
         <div class="tp-stock">Stock disponible: <b>${num(f[ST])} ${f[ST]===1?'unidad':'unidades'}</b></div>
       </div>
       <span class="chip-subcat">${esc(D.subcats[f[SC]])}</span>
@@ -765,16 +784,18 @@ let FILTRADAS = [];
 
 function pintarResultados(filas){
   const mostrarSubcat = !estado.subcat;
+  const mostrarTienda = !estado.tienda;
   $('th-subcat').style.display = mostrarSubcat ? '' : 'none';
+  $('th-tienda').style.display = mostrarTienda ? '' : 'none';
   const total = Math.max(1, Math.ceil(filas.length/PORPAGINA));
   if (estado.pagina>total) estado.pagina = total;
   const desde = (estado.pagina-1)*PORPAGINA;
   const trozo = filas.slice(desde, desde+PORPAGINA);
 
-  $('cuerpo-tabla').innerHTML = trozo.map((f,i)=>filaTablaHtml(f, mostrarSubcat, desde+i)).join('') ||
-    `<tr><td colspan="7" class="vacio-tabla">Sin productos para los filtros aplicados</td></tr>`;
+  $('cuerpo-tabla').innerHTML = trozo.map((f,i)=>filaTablaHtml(f, mostrarSubcat, mostrarTienda, desde+i)).join('') ||
+    `<tr><td colspan="8" class="vacio-tabla">Sin productos para los filtros aplicados</td></tr>`;
   $('cuerpo-tarjetas').innerHTML = trozo.length
-    ? trozo.map((f,i)=>tarjetaProdHtml(f, desde+i)).join('')
+    ? trozo.map((f,i)=>tarjetaProdHtml(f, desde+i, mostrarTienda)).join('')
     : `<div class="vacio-tarjetas">Sin productos para los filtros aplicados</div>`;
   $('cuerpo-tarjetas').querySelectorAll('.tp-detalle-btn').forEach(b=>b.addEventListener('click', ()=>{
     $('det-'+b.dataset.i).classList.toggle('abierto');
@@ -801,7 +822,6 @@ function pintarResultados(filas){
 function actualizarPaso(){
   const paso = $('paso-actual');
   if (!estado.zona) paso.textContent = 'Selecciona tu zona para comenzar';
-  else if (!estado.tienda) paso.textContent = 'Ahora selecciona tu tienda';
   else if (!estado.subcat) paso.textContent = 'Elige una subcategoría o mira todos los productos';
   else paso.textContent = 'Consultando productos disponibles para liquidación';
 }
@@ -809,14 +829,14 @@ function actualizarPaso(){
 function render(){
   llenarSelect($('fZona'), D.zonas, estado.zona, false);
   llenarSelect($('fTienda'), opcionesTienda(), estado.tienda, !estado.zona);
-  llenarSelect($('fSubcat'), opcionesSubcat(), estado.subcat, !estado.tienda);
-  llenarSelect($('fMarcaVeh'), opcionesMarcaVeh(), estado.marcaVeh, !estado.tienda);
-  llenarSelect($('fModelo'), opcionesModelo(), estado.modelo, !estado.tienda);
-  llenarSelect($('fAnio'), opcionesAnio(), estado.anio, !estado.tienda);
-  $('fBuscar').disabled = !estado.tienda;
+  llenarSelect($('fSubcat'), opcionesSubcat(), estado.subcat, !estado.zona);
+  llenarSelect($('fMarcaVeh'), opcionesMarcaVeh(), estado.marcaVeh, !estado.zona);
+  llenarSelect($('fModelo'), opcionesModelo(), estado.modelo, !estado.zona);
+  llenarSelect($('fAnio'), opcionesAnio(), estado.anio, !estado.zona);
+  $('fBuscar').disabled = !estado.zona;
   $('fBuscar').value = estado.q;
   $('ayuda-tienda').style.display = estado.zona ? 'none' : '';
-  $('ayuda-subcat').style.display = estado.tienda ? 'none' : '';
+  $('ayuda-subcat').style.display = estado.zona ? 'none' : '';
   $('fOrden').value = estado.orden; $('fSentido').value = estado.sentido;
   actualizarPaso();
 
@@ -828,13 +848,13 @@ function render(){
   const filas = filtrar();
   pintarMensajes(filas);
 
-  const mostrar = !!estado.tienda && filas.length>0;
+  const mostrar = !!estado.zona && filas.length>0;
   $('zona-resultados').hidden = !mostrar;
   $('btnTodaTienda').hidden = !(estado.subcat);
 
   if (mostrar){
     FILTRADAS = ordenar(filas);
-    const detalle = [estado.tienda, estado.subcat, estado.marcaVeh, estado.modelo,
+    const detalle = [estado.zona, estado.tienda, estado.subcat, estado.marcaVeh, estado.modelo,
                      estado.anio?('Año '+estado.anio):''].filter(Boolean).join(' · ');
     $('conteo').innerHTML = `${num(FILTRADAS.length)} ${FILTRADAS.length===1?'producto encontrado':'productos encontrados'}<span>${esc(detalle)}</span>`;
     pintarResultados(FILTRADAS);
