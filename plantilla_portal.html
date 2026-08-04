@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liquidación de Productos en Obsolescencia · Autoplanet</title>
+<meta name="description" content="Consulta y descarga los productos en liquidación por obsolescencia de Autoplanet según tu zona, tienda y subcategoría.">
+<style>
+/* =====================================================================
+   Autoplanet · Portal de Liquidación de Obsolescencia
+   Colores muestreados de autoplanet.cl y del logo real de Grupo Planet
+   (ver DIAGNOSTICO ó README del proyecto portal-web). Página comercial,
+   no un dashboard: sin tarjetas KPI, sin gráficos de barra en la vista
+   principal, precio de remate como protagonista tipo vitrina de tienda.
+   ===================================================================== */
+:root{
+  color-scheme: light;
+  --rojo:#F2101F;            /* rojo de acción: CTA, precio remate, hero */
+  --rojo-oscuro:#C00D19;
+  --rojo-marca:#D7141A;      /* rojo exacto del logo Grupo Planet */
+  --naranja:#E65100;         /* naranja real de la nav de autoplanet.cl */
+  --naranja-suave:#FDECE1;
+  --tinta:#1C1613;
+  --tinta-2:#5B534E;
+  --tenue:#8A8178;
+  --plano:#FAF8F6;
+  --superficie:#FFFFFF;
+  --borde:#EAE4DE;
+  --borde-fuerte:#D8CFC6;
+  --zebra:#FBF9F7;
+  --ambar:#8A5206;
+  --ambar-fondo:#FEF3C7;
+  --ambar-borde:#F3D68A;
+  --azul-info:#0B5FA5;
+  --azul-info-fondo:#EAF2FA;
+  --azul-info-borde:#BDD6EC;
+  --radio:10px;
+  --radio-chico:6px;
+  --sombra-flot:0 12px 32px rgba(28,22,19,.14);
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --rojo:#FF4B4B;
+    --rojo-oscuro:#FF6B6B;
+    --rojo-marca:#FF5C63;
+    --naranja:#FF9142;
+    --naranja-suave:rgba(255,145,66,.14);
+    --tinta:#F3F0ED;
+    --tinta-2:#C9C0B7;
+    --tenue:#948B82;
+    --plano:#141110;
+    --superficie:#1E1B19;
+    --borde:#332D28;
+    --borde-fuerte:#453D36;
+    --zebra:#241F1C;
+    --ambar:#F0C05A;
+    --ambar-fondo:rgba(240,192,90,.12);
+    --ambar-borde:rgba(240,192,90,.35);
+    --azul-info:#7FB6E8;
+    --azul-info-fondo:rgba(127,182,232,.10);
+    --azul-info-borde:rgba(127,182,232,.32);
+    --sombra-flot:0 12px 32px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --rojo:#FF4B4B; --rojo-oscuro:#FF6B6B; --rojo-marca:#FF5C63;
+  --naranja:#FF9142; --naranja-suave:rgba(255,145,66,.14);
+  --tinta:#F3F0ED; --tinta-2:#C9C0B7; --tenue:#948B82;
+  --plano:#141110; --superficie:#1E1B19; --borde:#332D28; --borde-fuerte:#453D36;
+  --zebra:#241F1C;
+  --ambar:#F0C05A; --ambar-fondo:rgba(240,192,90,.12); --ambar-borde:rgba(240,192,90,.35);
+  --azul-info:#7FB6E8; --azul-info-fondo:rgba(127,182,232,.10); --azul-info-borde:rgba(127,182,232,.32);
+  --sombra-flot:0 12px 32px rgba(0,0,0,.5);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--plano); color:var(--tinta);
+  font-family:var(--sans); font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;display:block}
+button,input,select{font:inherit;color:inherit}
+:where(a,button,select,input,summary):focus-visible{outline:3px solid var(--rojo);outline-offset:2px}
+.envoltura{max-width:1180px;margin:0 auto;padding:0 20px}
+@media(max-width:640px){.envoltura{padding:0 16px}}
+[hidden]{display:none !important}
+
+/* ---------- Barra superior ---------- */
+.topbar{
+  background:var(--superficie); border-bottom:1px solid var(--borde);
+  position:sticky; top:0; z-index:40;
+}
+.topbar-fila{
+  max-width:1180px;margin:0 auto;padding:14px 20px;
+  display:flex;align-items:center;gap:24px;flex-wrap:wrap;
+}
+@media(max-width:640px){
+  .topbar-fila{padding:10px 16px 0;gap:10px}
+}
+.wordmark{font-size:21px;font-weight:800;letter-spacing:-.01em;white-space:nowrap;flex:0 0 auto}
+.wordmark .auto{color:var(--tinta)}
+.wordmark .planet{color:var(--rojo-marca)}
+.tabs{display:flex;gap:4px;margin-left:8px}
+@media(max-width:640px){
+  .tabs{margin-left:-16px;order:4;flex:0 0 100%;border-top:1px solid var(--borde);padding:0 16px}
+}
+.tab{
+  appearance:none;border:0;background:transparent;cursor:pointer;
+  font-size:15px;font-weight:600;color:var(--tenue);
+  padding:8px 4px;border-bottom:2.5px solid transparent;
+  min-height:44px;
+}
+.tab[aria-selected="true"]{color:var(--rojo);border-bottom-color:var(--rojo)}
+.tab:hover{color:var(--tinta)}
+.topbar-meta{margin-left:auto;font-size:12.5px;color:var(--tenue);text-align:right;flex:0 0 auto}
+@media(max-width:640px){.topbar-meta{display:none}}
+.btn-tema{
+  appearance:none;border:1px solid var(--borde-fuerte);background:var(--superficie);
+  color:var(--tinta);border-radius:var(--radio-chico);min-height:38px;padding:0 12px;
+  font-size:13px;cursor:pointer;flex:0 0 auto;
+}
+@media(max-width:640px){.btn-tema{margin-left:auto;order:3}}
+.btn-tema:hover{border-color:var(--rojo)}
+
+/* ---------- Hero + tarjeta flotante ---------- */
+.hero{
+  background:linear-gradient(180deg, var(--rojo) 0%, var(--rojo-oscuro) 100%);
+  color:#fff; padding:40px 0 84px;
+}
+@media(max-width:640px){.hero{padding:28px 0 72px}}
+.hero-interior{max-width:1180px;margin:0 auto;padding:0 20px}
+@media(max-width:640px){.hero-interior{padding:0 16px}}
+.hero h1{
+  font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.02em;
+  margin:0 0 10px;line-height:1.12;text-wrap:balance;max-width:720px;
+}
+.hero p{margin:0;font-size:clamp(15px,1.6vw,18px);opacity:.94;max-width:620px}
+.hero .paso{
+  display:inline-flex;align-items:center;gap:8px;margin-top:20px;
+  background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.28);
+  border-radius:999px;padding:8px 16px;font-size:13px;font-weight:700;
+  letter-spacing:.02em;text-transform:uppercase;
+}
+
+.tarjeta-filtros{
+  background:var(--superficie);border-radius:var(--radio);
+  box-shadow:var(--sombra-flot); border:1px solid var(--borde);
+  margin:-56px 0 0; padding:22px 24px 18px; position:relative; z-index:5;
+}
+@media(max-width:640px){.tarjeta-filtros{margin-top:-48px;padding:18px 16px 14px}}
+.fila-filtros{display:grid;grid-template-columns:repeat(3,1fr) 1.3fr auto;gap:14px;align-items:end}
+@media(max-width:980px){.fila-filtros{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.fila-filtros{grid-template-columns:1fr}}
+.campo{display:flex;flex-direction:column;gap:6px;min-width:0}
+.campo > label{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--tinta-2)}
+.campo .ayuda{font-size:11.5px;color:var(--tenue);margin-top:2px}
+select,input[type="search"]{
+  min-height:48px;width:100%;padding:0 14px;font-size:15.5px;
+  border:1.5px solid var(--borde-fuerte);border-radius:var(--radio-chico);
+  background:var(--superficie);color:var(--tinta);
+}
+select:disabled{background:var(--zebra);color:var(--tenue);cursor:not-allowed;border-color:var(--borde)}
+select:not(:disabled):hover,input:hover{border-color:var(--rojo)}
+select:focus,input:focus{border-color:var(--rojo)}
+.buscador-wrap{position:relative}
+.buscador-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--tenue)}
+.buscador-wrap input{padding-left:38px}
+.link-limpiar{
+  appearance:none;background:transparent;border:0;cursor:pointer;
+  color:var(--rojo);font-weight:700;font-size:14px;min-height:48px;white-space:nowrap;
+  padding:0 4px;
+}
+.link-limpiar:hover{text-decoration:underline}
+@media(max-width:640px){.link-limpiar{align-self:flex-end;min-height:36px}}
+
+/* ---------- Mensajes ---------- */
+.mensajes{max-width:1180px;margin:22px auto 0;padding:0 20px;display:flex;flex-direction:column;gap:10px}
+@media(max-width:640px){.mensajes{padding:0 16px;margin-top:18px}}
+.mensaje{
+  border:1px solid var(--borde);border-radius:var(--radio-chico);background:var(--superficie);
+  padding:13px 16px;display:flex;gap:11px;align-items:flex-start;font-size:14.5px;line-height:1.5;
+}
+.mensaje .ic{flex:0 0 auto;font-size:16px;line-height:1.35}
+.mensaje.aviso{background:var(--ambar-fondo);border-color:var(--ambar-borde);color:var(--ambar)}
+.mensaje.dato{background:var(--azul-info-fondo);border-color:var(--azul-info-borde);color:var(--azul-info)}
+.mensaje.error{background:var(--naranja-suave);border-color:#EFC49E;color:#8A3B0A}
+.mensaje b{font-weight:700}
+
+/* ---------- Cuerpo / resultados ---------- */
+.seccion{max-width:1180px;margin:0 auto;padding:26px 20px 60px}
+@media(max-width:640px){.seccion{padding:20px 16px 48px}}
+.barra-resultados{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;
+}
+.conteo{font-size:19px;font-weight:800;letter-spacing:-.01em}
+.conteo span{display:block;font-size:13.5px;font-weight:400;color:var(--tenue);margin-top:2px}
+.btn{
+  appearance:none;border:1.5px solid var(--borde-fuerte);background:var(--superficie);color:var(--tinta);
+  border-radius:var(--radio-chico);min-height:46px;padding:0 18px;font-size:14.5px;font-weight:700;
+  cursor:pointer;white-space:nowrap;
+}
+.btn:hover{border-color:var(--rojo);color:var(--rojo)}
+.btn.primario{background:var(--rojo);border-color:var(--rojo);color:#fff}
+.btn.primario:hover{background:var(--rojo-oscuro);border-color:var(--rojo-oscuro);color:#fff}
+.btn svg{vertical-align:-3px;margin-right:6px}
+
+/* orden */
+.controles-orden{display:flex;gap:10px;align-items:center;margin:0 0 16px;flex-wrap:wrap}
+.controles-orden .campo{min-width:180px}
+.controles-orden select{min-height:42px;font-size:14px}
+
+/* --- Tabla desktop --- */
+.tabla-caja{
+  background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
+  overflow-x:auto;
+}
+@media(max-width:767px){.tabla-caja{display:none}}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+thead th{
+  text-align:left;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--tenue);padding:13px 16px;border-bottom:1.5px solid var(--borde);white-space:nowrap;
+}
+thead th.der{text-align:right}
+tbody td{padding:13px 16px;border-bottom:1px solid var(--borde);vertical-align:middle}
+tbody tr:nth-child(even) td{background:var(--zebra)}
+tbody tr:hover td{background:var(--naranja-suave)}
+td.cod{color:var(--tinta-2);font-size:13px;white-space:nowrap}
+td.desc{font-weight:600;min-width:220px}
+td.marca{color:var(--tinta-2)}
+/* Tabla simplificada en tablet: el precio (dato mas importante) siempre
+   visible sin scroll horizontal; Marca se oculta en este rango angosto. */
+@media(max-width:980px) and (min-width:768px){
+  th.col-marca, td.marca{display:none}
+}
+.chip-subcat{
+  display:inline-block;padding:3px 11px;border-radius:999px;background:var(--naranja-suave);
+  color:var(--naranja);font-size:12px;font-weight:700;white-space:nowrap;
+}
+td.precio{text-align:right;white-space:nowrap}
+.precio-normal{display:block;font-size:12.5px;color:var(--tenue);text-decoration:line-through}
+.precio-remate{display:block;font-size:19px;font-weight:800;color:var(--rojo);letter-spacing:-.01em}
+.precio-remate.pendiente{font-size:13px;font-weight:600;font-style:italic;color:var(--ambar);text-decoration:none}
+.vacio-tabla{padding:40px 20px;text-align:center;color:var(--tenue)}
+
+/* --- Tarjetas producto (móvil) --- */
+.tarjetas{display:none;flex-direction:column;gap:12px}
+@media(max-width:767px){.tarjetas{display:flex}}
+.tarjeta-prod{
+  background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
+  padding:16px 16px 14px;
+}
+.tp-cabeza{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.tp-titulo{font-size:15.5px;font-weight:700;line-height:1.3}
+.tp-cod{font-size:12.5px;color:var(--tenue);margin-top:2px}
+.tp-precio{border-top:1px solid var(--borde);margin-top:12px;padding-top:12px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.tp-precio .izq{font-size:13px;color:var(--tenue)}
+.tp-precio .valor{font-size:24px;font-weight:800;color:var(--rojo);letter-spacing:-.02em;line-height:1}
+.tp-precio .valor.pendiente{font-size:14px;font-style:italic;color:var(--ambar)}
+.tp-detalle-btn{
+  appearance:none;background:transparent;border:0;color:var(--rojo);font-weight:700;font-size:13.5px;
+  padding:8px 0 0;cursor:pointer;min-height:36px;
+}
+.tp-detalle{display:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--borde);font-size:13.5px;color:var(--tinta-2)}
+.tp-detalle.abierto{display:block}
+.tp-detalle div+div{margin-top:3px}
+.vacio-tarjetas{padding:36px 16px;text-align:center;color:var(--tenue);background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio)}
+
+/* paginación */
+.paginas{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--tinta-2);margin-top:16px}
+.paginas .sep{flex:1}
+.paginas button{
+  min-height:38px;padding:0 13px;border:1px solid var(--borde-fuerte);border-radius:var(--radio-chico);
+  background:var(--superficie);color:var(--tinta);cursor:pointer;font-size:13px;
+}
+.paginas button:disabled{opacity:.4;cursor:default}
+.paginas button:not(:disabled):hover{border-color:var(--rojo);color:var(--rojo)}
+
+/* ---------- Ayuda (pasos) ---------- */
+.ayuda-pasos{
+  background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
+  padding:20px 22px;margin-top:32px;
+}
+.ayuda-pasos h3{margin:0 0 12px;font-size:15px}
+.ayuda-pasos ol{margin:0;padding-left:20px;font-size:14px;color:var(--tinta-2);line-height:1.9}
+
+/* ---------- Análisis ---------- */
+.analisis-grid{display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:28px;align-items:start}
+@media(max-width:860px){.analisis-grid{grid-template-columns:1fr}}
+.donut-caja{
+  background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
+  padding:24px;display:flex;flex-direction:column;align-items:center;gap:18px;
+}
+.donut-svg{width:100%;max-width:280px;height:auto}
+.donut-slice{cursor:pointer;transition:opacity .12s}
+.donut-slice:hover,.donut-slice.activa{opacity:.82}
+.donut-centro-valor{font-size:20px;font-weight:800;fill:var(--tinta)}
+.donut-centro-label{font-size:11px;fill:var(--tenue)}
+.leyenda{display:flex;flex-direction:column;gap:9px;width:100%}
+.leyenda-item{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer;padding:4px 6px;border-radius:6px}
+.leyenda-item:hover{background:var(--zebra)}
+.leyenda-dot{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.leyenda-nombre{flex:1;min-width:0}
+.leyenda-valor{color:var(--tenue);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tabla-analisis{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden}
+.tabla-analisis table{font-size:14px}
+.tabla-analisis td.num,.tabla-analisis th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tabla-analisis tfoot td{font-weight:800;border-top:1.5px solid var(--borde-fuerte);border-bottom:0}
+#tip-donut{
+  position:fixed;z-index:200;pointer-events:none;display:none;
+  background:var(--tinta);color:var(--plano);border-radius:8px;padding:8px 11px;font-size:12.5px;
+  max-width:220px;box-shadow:0 6px 20px rgba(0,0,0,.25);
+}
+
+/* ---------- Footer ---------- */
+footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
+.footer-interior{
+  max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  gap:20px;flex-wrap:wrap;
+}
+.footer-marca{display:flex;align-items:center;gap:10px}
+.footer-marca img{height:28px;width:auto;border-radius:4px}
+.footer-marca span{font-size:12.5px;color:var(--tenue)}
+.footer-fuente{font-size:12px;color:var(--tenue);line-height:1.7;max-width:520px}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <header class="topbar">
+    <div class="topbar-fila">
+      <div class="wordmark"><span class="auto">Auto</span><span class="planet">Planet</span></div>
+      <nav class="tabs" role="tablist" aria-label="Secciones">
+        <button class="tab" role="tab" id="tab-consulta" aria-selected="true" type="button">Consulta</button>
+        <button class="tab" role="tab" id="tab-analisis" aria-selected="false" type="button">Análisis</button>
+      </nav>
+      <div class="topbar-meta" id="meta-datos">&nbsp;</div>
+      <button class="btn-tema" id="btnTema" type="button">Tema</button>
+    </div>
+  </header>
+
+  <!-- ============================= CONSULTA ============================= -->
+  <section id="vista-consulta">
+    <div class="hero">
+      <div class="hero-interior">
+        <h1>Liquidación de Productos en Obsolescencia</h1>
+        <p>Consulta los productos disponibles para liquidación según tu zona, tienda y subcategoría.</p>
+        <span class="paso" id="paso-actual">Selecciona tu zona para comenzar</span>
+      </div>
+    </div>
+
+    <div class="envoltura">
+      <div class="tarjeta-filtros">
+        <div class="fila-filtros">
+          <div class="campo">
+            <label for="fZona">Zona</label>
+            <select id="fZona"></select>
+          </div>
+          <div class="campo">
+            <label for="fTienda">Tienda</label>
+            <select id="fTienda" disabled></select>
+            <span class="ayuda" id="ayuda-tienda">Selecciona primero tu zona</span>
+          </div>
+          <div class="campo">
+            <label for="fSubcat">Subcategoría</label>
+            <select id="fSubcat" disabled></select>
+            <span class="ayuda" id="ayuda-subcat">Selecciona primero tu tienda</span>
+          </div>
+          <div class="campo">
+            <label for="fBuscar">Buscar</label>
+            <div class="buscador-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              <input type="search" id="fBuscar" placeholder="Material, marca, modelo…" disabled autocomplete="off">
+            </div>
+          </div>
+          <button class="link-limpiar" id="btnLimpiar" type="button">Limpiar filtros</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mensajes" id="mensajes"></div>
+
+    <div class="seccion" id="zona-resultados" hidden>
+      <div class="controles-orden">
+        <label class="campo" style="flex-direction:row;align-items:center;gap:8px">
+          <span style="text-transform:none;font-weight:600;color:var(--tinta-2)">Ordenar por</span>
+          <select id="fOrden">
+            <option value="remate">Valor remate con IVA</option>
+            <option value="texto">Texto breve</option>
+            <option value="material">Código de material</option>
+            <option value="subcat">Subcategoría</option>
+          </select>
+        </label>
+        <select id="fSentido" style="min-height:42px;max-width:160px">
+          <option value="desc">Mayor a menor</option>
+          <option value="asc">Menor a mayor</option>
+        </select>
+        <button class="btn" id="btnTodaTienda" type="button" hidden>Ver todas las subcategorías</button>
+      </div>
+
+      <div class="barra-resultados">
+        <div class="conteo" id="conteo"></div>
+        <button class="btn primario" id="btnDescargar" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3v13m0 0l-5-5m5 5l5-5M4 21h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Descargar listado filtrado
+        </button>
+      </div>
+
+      <div class="tabla-caja">
+        <table>
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th>Texto breve del material</th>
+              <th class="col-marca">Marca</th>
+              <th id="th-subcat">Subcategoría</th>
+              <th class="der">Precio</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla"></tbody>
+        </table>
+      </div>
+      <div class="tarjetas" id="cuerpo-tarjetas"></div>
+
+      <div class="paginas" id="paginas"></div>
+    </div>
+
+    <div class="envoltura">
+      <div class="ayuda-pasos">
+        <h3>¿Cómo funciona?</h3>
+        <ol>
+          <li>Selecciona tu zona.</li>
+          <li>Selecciona tu tienda.</li>
+          <li>Elige una subcategoría (o mira todas).</li>
+          <li>Descarga el listado si lo necesitas.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================= ANÁLISIS ============================= -->
+  <section id="vista-analisis" hidden>
+    <div class="envoltura" style="padding-top:32px">
+      <h2 style="font-size:24px;margin:0 0 4px">Stock valorizado por zona</h2>
+      <p style="color:var(--tinta-2);margin:0 0 24px;max-width:640px">
+        Stock valorizado = stock disponible × valor remate con IVA. Vista de referencia general de la campaña, no reemplaza la consulta por tienda.
+      </p>
+
+      <div class="analisis-grid">
+        <div class="donut-caja">
+          <svg class="donut-svg" id="donutSvg" viewBox="0 0 220 220" role="img" aria-label="Distribución de stock valorizado por zona"></svg>
+          <div class="leyenda" id="leyendaDonut"></div>
+        </div>
+        <div class="tabla-analisis">
+          <table>
+            <thead><tr><th>Zona</th><th class="num">Stock valorizado</th><th class="num">Participación</th></tr></thead>
+            <tbody id="cuerpoAnalisis"></tbody>
+            <tfoot><tr><td>Total nacional</td><td class="num" id="totalAnalisis"></td><td class="num">100%</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-interior">
+      <div class="footer-marca">
+        <img src="data:image/png;base64,__LOGO_GRUPO_PLANET__" alt="Grupo Planet">
+        <span>Parte de Grupo Planet</span>
+      </div>
+      <div class="footer-fuente" id="footerFuente"></div>
+    </div>
+  </footer>
+</div>
+
+<div id="tip-donut"></div>
+
+<script>
+const D = /*__DATOS__*/null;
+
+/* ---------------- utilidades ---------------- */
+const NF = new Intl.NumberFormat('es-CL');
+const clp = v => (v===null||v===undefined) ? null : '$'+NF.format(Math.round(v));
+const num = v => (v===null||v===undefined) ? '—' : NF.format(Math.round(v));
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => String(s??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const TODAS = '— Todas —';
+const $ = id => document.getElementById(id);
+
+/* columnas de cada fila: Z,T,M,X,MA,CA,SC,MO,MT,AN,PN,VR */
+const Z=0,T=1,M=2,X=3,MA=4,CA=5,SC=6,MO=7,MT=8,AN=9,PN=10,VR=11;
+
+const busqueda = D.filas.map(f => norm([
+  D.materiales[f[M]], D.textos[f[X]], D.marcas[f[MA]], D.subcats[f[SC]],
+  D.categorias[f[CA]], f[MO]>=0?D.modelos[f[MO]]:'', f[MT]>=0?D.motores[f[MT]]:'', f[AN]>=0?D.anios[f[AN]]:''
+].join(' ')));
+
+const estado = {zona:'', tienda:'', subcat:'', q:'', orden:'remate', sentido:'desc', pagina:1};
+const PORPAGINA = 40;
+
+/* ---------------- filtrado ---------------- */
+function filtrar(omitir){
+  const zi = (omitir!=='zona' && estado.zona) ? D.zonas.indexOf(estado.zona) : -1;
+  const ti = (omitir!=='tienda' && estado.tienda) ? D.tiendas.indexOf(estado.tienda) : -1;
+  const si = (omitir!=='subcat' && estado.subcat) ? D.subcats.indexOf(estado.subcat) : -1;
+  const toks = estado.q ? norm(estado.q).split(/\s+/).filter(Boolean) : null;
+  const out = [];
+  for (let i=0;i<D.filas.length;i++){
+    const f = D.filas[i];
+    if (zi>=0 && f[Z]!==zi) continue;
+    if (ti>=0 && f[T]!==ti) continue;
+    if (si>=0 && f[SC]!==si) continue;
+    if (toks){ const s=busqueda[i]; let ok=true; for(const t of toks){ if(!s.includes(t)){ok=false;break;} } if(!ok) continue; }
+    out.push(f);
+  }
+  return out;
+}
+function opcionesTienda(){
+  const base = filtrar('tienda');
+  const vistos = new Set(base.map(f=>f[T]));
+  return D.tiendas.filter((_,i)=>vistos.has(i));
+}
+function opcionesSubcat(){
+  if (!estado.tienda) return [];
+  const base = filtrar('subcat');
+  const vistos = new Set(base.map(f=>f[SC]));
+  return D.subcats.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
+}
+function llenarSelect(sel, opciones, valor, deshabilitado){
+  sel.innerHTML = [TODAS, ...opciones].map(o=>{
+    const v = o===TODAS ? '' : o;
+    return `<option value="${esc(v)}"${v===valor?' selected':''}>${esc(o)}</option>`;
+  }).join('');
+  sel.disabled = !!deshabilitado;
+}
+
+/* ---------------- mensajes ---------------- */
+function mensajeHtml(texto, tipo, icono){
+  return `<div class="mensaje ${tipo}"><span class="ic">${icono}</span><div>${texto}</div></div>`;
+}
+function pintarMensajes(filas){
+  const msgs = [];
+  if (!estado.zona){
+    msgs.push(mensajeHtml('Selecciona una <b>zona</b> para ver las tiendas disponibles.', 'dato', 'ℹ️'));
+  } else if (!estado.tienda){
+    const n = opcionesTienda().length;
+    msgs.push(mensajeHtml(`<b>${esc(estado.zona)}</b>: ${n} ${n===1?'tienda':'tiendas'} con productos en liquidación. Selecciona tu <b>tienda</b>.`, 'dato', 'ℹ️'));
+  }
+  if (estado.tienda){
+    const sinPrecio = filas.filter(f=>f[VR]===null).length;
+    if (sinPrecio) msgs.push(mensajeHtml(`<b>${num(sinPrecio)}</b> producto(s) sin valor remate se muestran como «Precio pendiente».`, 'aviso', '⚠️'));
+    if (estado.tienda && !estado.subcat && !estado.q && filas.length===0){
+      msgs.push(mensajeHtml(`La tienda <b>${esc(estado.tienda)}</b> no tiene productos en liquidación en este momento.`, 'aviso', '⚠️'));
+    } else if (estado.subcat && filas.length===0){
+      msgs.push(mensajeHtml(`No hay productos de <b>${esc(estado.subcat)}</b> en ${esc(estado.tienda)}. Prueba otra subcategoría o usa «Ver todas las subcategorías».`, 'aviso', '⚠️'));
+    } else if (estado.q && filas.length===0){
+      msgs.push(mensajeHtml(`La búsqueda «${esc(estado.q)}» no encontró productos en ${esc(estado.tienda)}.`, 'aviso', '⚠️'));
+    }
+  }
+  $('mensajes').innerHTML = msgs.join('');
+}
+
+/* ---------------- render resultados ---------------- */
+function ordenar(filas){
+  const dir = estado.sentido==='asc' ? 1 : -1;
+  const clave = {
+    remate: f=>f[VR], texto: f=>D.textos[f[X]], material: f=>D.materiales[f[M]], subcat: f=>D.subcats[f[SC]],
+  }[estado.orden];
+  const copia = filas.slice();
+  copia.sort((a,b)=>{
+    const va=clave(a), vb=clave(b);
+    if (va===null||va===undefined) return 1;
+    if (vb===null||vb===undefined) return -1;
+    if (typeof va==='string') return va.localeCompare(vb,'es')*dir;
+    return (va-vb)*dir;
+  });
+  return copia;
+}
+
+function filaTablaHtml(f, mostrarSubcat){
+  const precio = f[VR]===null
+    ? `<span class="precio-remate pendiente">Precio pendiente</span>`
+    : `${f[PN]?`<span class="precio-normal">${clp(f[PN])}</span>`:''}<span class="precio-remate">${clp(f[VR])}</span>`;
+  return `<tr>
+    <td class="cod">${esc(D.materiales[f[M]])}</td>
+    <td class="desc">${esc(D.textos[f[X]])}</td>
+    <td class="marca">${esc(D.marcas[f[MA]])}</td>
+    <td>${mostrarSubcat?`<span class="chip-subcat">${esc(D.subcats[f[SC]])}</span>`:'<span style="color:var(--tenue)">—</span>'}</td>
+    <td class="precio">${precio}</td>
+  </tr>`;
+}
+function tarjetaProdHtml(f, i){
+  const precio = f[VR]===null
+    ? `<span class="valor pendiente">Precio pendiente</span>`
+    : `<span class="valor">${clp(f[VR])}</span>`;
+  const normal = (f[VR]!==null && f[PN]) ? `<div>Normal ${clp(f[PN])}</div>` : '';
+  const detalle = [];
+  if (f[MO]>=0) detalle.push(`<div><b>Modelo:</b> ${esc(D.modelos[f[MO]])}</div>`);
+  if (f[MT]>=0) detalle.push(`<div><b>Motor:</b> ${esc(D.motores[f[MT]])}</div>`);
+  if (f[AN]>=0) detalle.push(`<div><b>Años:</b> ${esc(D.anios[f[AN]])}</div>`);
+  return `<div class="tarjeta-prod">
+    <div class="tp-cabeza">
+      <div>
+        <div class="tp-titulo">${esc(D.textos[f[X]])}</div>
+        <div class="tp-cod">${esc(D.materiales[f[M]])} · ${esc(D.marcas[f[MA]])}</div>
+      </div>
+      <span class="chip-subcat">${esc(D.subcats[f[SC]])}</span>
+    </div>
+    ${detalle.length?`<button class="tp-detalle-btn" data-i="${i}" type="button">Ver detalle ›</button><div class="tp-detalle" id="det-${i}">${detalle.join('')}</div>`:''}
+    <div class="tp-precio">
+      <div class="izq">${normal}</div>
+      ${precio}
+    </div>
+  </div>`;
+}
+
+let FILTRADAS = [];
+
+function pintarResultados(filas){
+  const mostrarSubcat = !estado.subcat;
+  $('th-subcat').style.display = mostrarSubcat ? '' : 'none';
+  const total = Math.max(1, Math.ceil(filas.length/PORPAGINA));
+  if (estado.pagina>total) estado.pagina = total;
+  const desde = (estado.pagina-1)*PORPAGINA;
+  const trozo = filas.slice(desde, desde+PORPAGINA);
+
+  $('cuerpo-tabla').innerHTML = trozo.map(f=>filaTablaHtml(f, mostrarSubcat)).join('') ||
+    `<tr><td colspan="5" class="vacio-tabla">Sin productos para los filtros aplicados</td></tr>`;
+  $('cuerpo-tarjetas').innerHTML = trozo.length
+    ? trozo.map((f,i)=>tarjetaProdHtml(f, desde+i)).join('')
+    : `<div class="vacio-tarjetas">Sin productos para los filtros aplicados</div>`;
+  $('cuerpo-tarjetas').querySelectorAll('.tp-detalle-btn').forEach(b=>b.addEventListener('click', ()=>{
+    $('det-'+b.dataset.i).classList.toggle('abierto');
+  }));
+
+  $('paginas').innerHTML = total>1 ? `
+    <button type="button" data-p="1" ${estado.pagina===1?'disabled':''}>« Primera</button>
+    <button type="button" data-p="${estado.pagina-1}" ${estado.pagina===1?'disabled':''}>Anterior</button>
+    <span>Página ${estado.pagina} de ${total}</span>
+    <button type="button" data-p="${estado.pagina+1}" ${estado.pagina===total?'disabled':''}>Siguiente</button>
+    <span class="sep"></span><span>${num(desde+1)}–${num(Math.min(desde+PORPAGINA,filas.length))} de ${num(filas.length)}</span>` : '';
+  $('paginas').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    estado.pagina=+b.dataset.p; pintarResultados(FILTRADAS);
+    document.getElementById('zona-resultados').scrollIntoView({behavior:'smooth',block:'start'});
+  }));
+}
+
+function actualizarPaso(){
+  const paso = $('paso-actual');
+  if (!estado.zona) paso.textContent = 'Selecciona tu zona para comenzar';
+  else if (!estado.tienda) paso.textContent = 'Ahora selecciona tu tienda';
+  else if (!estado.subcat) paso.textContent = 'Elige una subcategoría o mira todos los productos';
+  else paso.textContent = 'Consultando productos disponibles para liquidación';
+}
+
+function render(){
+  llenarSelect($('fZona'), D.zonas, estado.zona, false);
+  llenarSelect($('fTienda'), opcionesTienda(), estado.tienda, !estado.zona);
+  llenarSelect($('fSubcat'), opcionesSubcat(), estado.subcat, !estado.tienda);
+  $('fBuscar').disabled = !estado.tienda;
+  $('fBuscar').value = estado.q;
+  $('ayuda-tienda').style.display = estado.zona ? 'none' : '';
+  $('ayuda-subcat').style.display = estado.tienda ? 'none' : '';
+  $('fOrden').value = estado.orden; $('fSentido').value = estado.sentido;
+  actualizarPaso();
+
+  const filas = filtrar();
+  pintarMensajes(filas);
+
+  const mostrar = !!estado.tienda && filas.length>0;
+  $('zona-resultados').hidden = !mostrar;
+  $('btnTodaTienda').hidden = !(estado.subcat);
+
+  if (mostrar){
+    FILTRADAS = ordenar(filas);
+    const detalle = [estado.tienda, estado.subcat].filter(Boolean).join(' · ');
+    $('conteo').innerHTML = `${num(FILTRADAS.length)} ${FILTRADAS.length===1?'producto encontrado':'productos encontrados'}<span>${esc(detalle)}</span>`;
+    pintarResultados(FILTRADAS);
+  } else {
+    FILTRADAS = [];
+  }
+}
+
+/* ---------------- eventos filtros ---------------- */
+$('fZona').addEventListener('change', e=>{
+  estado.zona = e.target.value;
+  if (estado.tienda && !opcionesTienda().includes(estado.tienda)){ estado.tienda=''; estado.subcat=''; }
+  estado.pagina=1; render();
+});
+$('fTienda').addEventListener('change', e=>{
+  estado.tienda = e.target.value;
+  if (estado.subcat && !opcionesSubcat().includes(estado.subcat)) estado.subcat='';
+  estado.pagina=1; render();
+});
+$('fSubcat').addEventListener('change', e=>{ estado.subcat=e.target.value; estado.pagina=1; render(); });
+$('fOrden').addEventListener('change', e=>{ estado.orden=e.target.value; estado.pagina=1; render(); });
+$('fSentido').addEventListener('change', e=>{ estado.sentido=e.target.value; estado.pagina=1; render(); });
+let tq;
+$('fBuscar').addEventListener('input', e=>{
+  clearTimeout(tq); const v=e.target.value;
+  tq=setTimeout(()=>{ estado.q=v.trim(); estado.pagina=1; render(); }, 200);
+});
+$('btnLimpiar').addEventListener('click', ()=>{
+  estado.zona=estado.tienda=estado.subcat=estado.q=''; estado.pagina=1; render();
+});
+$('btnTodaTienda').addEventListener('click', ()=>{ estado.subcat=''; estado.pagina=1; render(); });
+
+/* ---------------- descarga CSV ---------------- */
+$('btnDescargar').addEventListener('click', ()=>{
+  const cab = ['Zona','Tienda','Material','Texto breve','Marca','Categoría','Subcategoría','Precio normal','Valor remate con IVA'];
+  const filas = FILTRADAS.map(f=>{
+    const fila = [D.zonas[f[Z]], D.tiendas[f[T]], D.materiales[f[M]], D.textos[f[X]], D.marcas[f[MA]],
+      D.categorias[f[CA]], D.subcats[f[SC]], f[PN]??'', f[VR]??''];
+    return fila.map(v=>/[;"\n]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':v).join(';');
+  });
+  const blob = new Blob(['﻿'+[cab.join(';'), ...filas].join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const partes = ['obsolescencia'];
+  if (estado.zona) partes.push(estado.zona.replace(/[^A-Za-z0-9]+/g,'-'));
+  if (estado.tienda) partes.push(estado.tienda.split('–')[0].trim());
+  if (estado.subcat) partes.push(estado.subcat.replace(/[^A-Za-z0-9]+/g,'-').slice(0,24));
+  const hoy = new Date(D.info.marcaTiempo);
+  partes.push(hoy.toISOString().slice(0,10));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=partes.join('_')+'.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+});
+
+/* ---------------- pestañas ---------------- */
+function mostrarVista(cual){
+  const esConsulta = cual==='consulta';
+  $('vista-consulta').hidden = !esConsulta;
+  $('vista-analisis').hidden = esConsulta;
+  $('tab-consulta').setAttribute('aria-selected', String(esConsulta));
+  $('tab-analisis').setAttribute('aria-selected', String(!esConsulta));
+  if (!esConsulta && !window.__donutPintado){ pintarAnalisis(); window.__donutPintado = true; }
+}
+$('tab-consulta').addEventListener('click', ()=>mostrarVista('consulta'));
+$('tab-analisis').addEventListener('click', ()=>mostrarVista('analisis'));
+
+/* ---------------- tema ---------------- */
+const temaGuardado = localStorage.getItem('ap-tema');
+if (temaGuardado) document.documentElement.setAttribute('data-theme', temaGuardado);
+$('btnTema').addEventListener('click', ()=>{
+  const actual = document.documentElement.getAttribute('data-theme');
+  const oscuroActivo = actual ? actual==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  const siguiente = oscuroActivo ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', siguiente);
+  localStorage.setItem('ap-tema', siguiente);
+  if (window.__donutPintado) pintarAnalisis();
+});
+
+/* ---------------- Análisis: donut SVG ---------------- */
+function colorVar(nombre){
+  return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim();
+}
+const PALETA_ZONA = {
+  // orden fijo: 5 zonas geograficas reales + gris para "Otras / Nacional"
+  claro:  ['#2a78d6','#1f8a3d','#9333ea','#b8860b','#d6336c','#9a9a9a'],
+  oscuro: ['#3987e5','#2f9e44','#a855c9','#c98500','#e8476e','#a3a3a3'],
+};
+function coloresActuales(){
+  const oscuro = document.documentElement.getAttribute('data-theme')==='dark'
+    || (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+  return oscuro ? PALETA_ZONA.oscuro : PALETA_ZONA.claro;
+}
+
+function pintarAnalisis(){
+  const datos = D.analisis; // [{zona, valor}], ya ordenado desc por Python
+  const colores = coloresActuales();
+  const total = datos.reduce((s,d)=>s+d.valor,0);
+  const cx=110, cy=110, rExt=95, rInt=58, gap=0.014; // gap en radianes entre segmentos
+
+  let anguloAcum = -Math.PI/2;
+  const svg = $('donutSvg');
+  let piezas = '';
+  datos.forEach((d,i)=>{
+    const frac = total? d.valor/total : 0;
+    const barrido = Math.max(0, frac*Math.PI*2 - gap);
+    const a0 = anguloAcum + gap/2, a1 = a0 + barrido;
+    const col = colores[i % colores.length];
+    const pIni = [cx+rExt*Math.cos(a0), cy+rExt*Math.sin(a0)];
+    const pFin = [cx+rExt*Math.cos(a1), cy+rExt*Math.sin(a1)];
+    const pIniI = [cx+rInt*Math.cos(a1), cy+rInt*Math.sin(a1)];
+    const pFinI = [cx+rInt*Math.cos(a0), cy+rInt*Math.sin(a0)];
+    const largo = (a1-a0) > Math.PI ? 1 : 0;
+    const d_path = `M${pIni[0]},${pIni[1]} A${rExt},${rExt} 0 ${largo} 1 ${pFin[0]},${pFin[1]}
+                    L${pIniI[0]},${pIniI[1]} A${rInt},${rInt} 0 ${largo} 0 ${pFinI[0]},${pFinI[1]} Z`;
+    piezas += `<path class="donut-slice" d="${d_path}" fill="${col}" data-i="${i}"><title>${esc(d.zona)}: ${clp(d.valor)} (${(frac*100).toFixed(1)}%)</title></path>`;
+    // etiqueta directa si el segmento es grande
+    if (frac >= 0.09){
+      const am = (a0+a1)/2, rLbl = (rExt+rInt)/2 + 4;
+      const lx = cx+rLbl*Math.cos(am), ly = cy+rLbl*Math.sin(am);
+      piezas += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="#fff" pointer-events="none">${Math.round(frac*100)}%</text>`;
+    }
+    anguloAcum += frac*Math.PI*2;
+  });
+  piezas += `<text x="${cx}" y="${cy-6}" text-anchor="middle" class="donut-centro-valor">${clp(total).replace('$','$ ')}</text>`;
+  piezas += `<text x="${cx}" y="${cy+14}" text-anchor="middle" class="donut-centro-label">Total nacional</text>`;
+  svg.innerHTML = piezas;
+
+  const tip = $('tip-donut');
+  svg.querySelectorAll('.donut-slice').forEach(el=>{
+    const d = datos[+el.dataset.i];
+    const frac = total? d.valor/total : 0;
+    el.addEventListener('mousemove', e=>{
+      tip.innerHTML = `<b>${esc(d.zona)}</b><br>${clp(d.valor)} · ${(frac*100).toFixed(1)}%`;
+      tip.style.display='block';
+      let x=e.clientX+14, y=e.clientY+14;
+      tip.style.left=x+'px'; tip.style.top=y+'px';
+    });
+    el.addEventListener('mouseleave', ()=>tip.style.display='none');
+  });
+
+  $('leyendaDonut').innerHTML = datos.map((d,i)=>{
+    const frac = total? d.valor/total : 0;
+    return `<div class="leyenda-item" data-i="${i}">
+      <span class="leyenda-dot" style="background:${colores[i%colores.length]}"></span>
+      <span class="leyenda-nombre">${esc(d.zona)}</span>
+      <span class="leyenda-valor">${(frac*100).toFixed(1)}%</span>
+    </div>`;
+  }).join('');
+
+  $('cuerpoAnalisis').innerHTML = datos.map(d=>{
+    const frac = total? d.valor/total : 0;
+    return `<tr><td>${esc(d.zona)}</td><td class="num">${clp(d.valor)}</td><td class="num">${(frac*100).toFixed(1)}%</td></tr>`;
+  }).join('');
+  $('totalAnalisis').textContent = clp(total);
+}
+
+/* ---------------- arranque ---------------- */
+$('meta-datos').innerHTML = `Datos actualizados: ${esc(D.info.fecha)}`;
+$('footerFuente').innerHTML = `Fuente: <b>${esc(D.info.archivo)}</b> · ${num(D.info.totalTiendas)} tiendas · ${num(D.info.totalZonas)} zonas · ${num(D.info.totalSubcats)} subcategorías. El valor remate con IVA es el precio de venta final.`;
+render();
+</script>
+</body>
+</html>
