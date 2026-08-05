@@ -37,7 +37,50 @@ PLANTILLA = RAIZ_PORTAL / "plantilla_portal.html"
 SALIDA = RAIZ_PORTAL / "index.html"
 LOGO_GRUPO_PLANET_B64 = (RAIZ_PORTAL / "logo_grupo_planet_b64.txt").read_text().strip()
 LOGO_AUTOPLANET_B64 = (RAIZ_PORTAL / "logo_autoplanet_b64.txt").read_text().strip()
-BANNER_HERO_B64 = (RAIZ_PORTAL / "banner_hero_b64.txt").read_text().strip()
+
+# --- Assets del rediseño visual (recortados de las referencias reales que
+# dejo el usuario en Elementos/ -- ver portal-web/assets_src/recortar_iconos.py) --
+CARPETA_ASSETS = RAIZ_PORTAL / "assets_src"
+
+
+def _b64_asset(nombre_archivo: str) -> str:
+    import base64
+    return base64.b64encode((CARPETA_ASSETS / nombre_archivo).read_bytes()).decode("ascii")
+
+
+ASSETS_VISUALES = {
+    "__HERO_ILUSTRACION__": "hero_ilustracion.png",
+    "__ICONO_ZONA__": "icono_zona.png",
+    "__ICONO_TIENDA__": "icono_tienda.png",
+    "__ICONO_SUBCATEGORIA__": "icono_subcategoria.png",
+    "__ICONO_FILTRO__": "icono_filtro.png",
+    "__ICONO_BUSCAR__": "icono_buscar.png",
+    "__ICONO_EXPORTAR__": "icono_exportar.png",
+    "__ICONO_CONSULTA_RAPIDA__": "icono_consulta_rapida.png",
+    "__ICONO_VEHICULO__": "icono_vehiculo.png",
+    "__ICONO_VISTA__": "icono_vista.png",
+    "__ICONO_FAVORITO__": "icono_favorito.png",
+    "__ICONO_TEMA__": "icono_tema.png",
+    "__ICONO_KIT_EMBRAGUE__": "icono_kit_embrague.png",
+    "__ICONO_DISCO_FRENO__": "icono_disco_freno.png",
+    "__ICONO_BUJIA__": "icono_bujia.png",
+    "__ICONO_AMORTIGUADOR__": "icono_amortiguador.png",
+    "__ICONO_FILTRO_AIRE__": "icono_filtro_aire.png",
+}
+
+# --- Vista rapida: subcategorias detras de cada icono disponible. El
+# calculo real (producto con mayor stock, filtrado por la zona activa) se
+# hace en JS (ver plantilla_portal.html, CATEGORIAS_DESTACADAS) para que la
+# seccion reaccione al filtro de Zona sin tener que regenerar el sitio.
+# Esta lista queda aqui solo como referencia de que subcategorias respaldan
+# cada icono, para no perder la trazabilidad si se agrega uno nuevo.
+CATEGORIAS_DESTACADAS_REFERENCIA = [
+    ("Kit de Embrague", ["KIT DE EMBRAGUE"], "icono_kit_embrague"),
+    ("Disco de Freno", ["DISCO DE FRENO DELANTERO", "DISCO DE FRENO TRASERO"], "icono_disco_freno"),
+    ("Bujía", ["BUJIA INCANDESCENTE"], "icono_bujia"),
+    ("Amortiguador", ["AMORTIGUADOR DELANTERO", "AMORTIGUADOR TRASERO"], "icono_amortiguador"),
+    ("Filtro de Aire", ["FILTRO DE AIRE"], "icono_filtro_aire"),
+]
 
 # Orden en que se ofrecen las zonas en el selector: geograficas de norte a
 # sur primero, luego las no geograficas. Cualquier zona nueva que aparezca
@@ -238,7 +281,8 @@ def main() -> int:
     )
     html = html.replace("__LOGO_GRUPO_PLANET__", LOGO_GRUPO_PLANET_B64)
     html = html.replace("__LOGO_AUTOPLANET__", LOGO_AUTOPLANET_B64)
-    html = html.replace("__BANNER_HERO__", BANNER_HERO_B64)
+    for marcador, archivo in ASSETS_VISUALES.items():
+        html = html.replace(marcador, _b64_asset(archivo))
     datos_js = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     html = html.replace("/*__DATOS__*/null", datos_js)
 

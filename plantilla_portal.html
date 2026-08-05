@@ -31,9 +31,9 @@
   --ambar:#8A5206;
   --ambar-fondo:#FEF3C7;
   --ambar-borde:#F3D68A;
-  --azul-info:#0B5FA5;
-  --azul-info-fondo:#EAF2FA;
-  --azul-info-borde:#BDD6EC;
+  --info:#5B534E;
+  --info-fondo:#F3F0EC;
+  --info-borde:#D8CFC6;
   --radio:10px;
   --radio-chico:6px;
   --sombra-flot:0 12px 32px rgba(28,22,19,.14);
@@ -58,9 +58,9 @@
     --ambar:#F0C05A;
     --ambar-fondo:rgba(240,192,90,.12);
     --ambar-borde:rgba(240,192,90,.35);
-    --azul-info:#7FB6E8;
-    --azul-info-fondo:rgba(127,182,232,.10);
-    --azul-info-borde:rgba(127,182,232,.32);
+    --info:#C9C0B7;
+    --info-fondo:rgba(255,255,255,.04);
+    --info-borde:#453D36;
     --sombra-flot:0 12px 32px rgba(0,0,0,.5);
   }
 }
@@ -72,7 +72,7 @@
   --plano:#141110; --superficie:#1E1B19; --borde:#332D28; --borde-fuerte:#453D36;
   --zebra:#241F1C;
   --ambar:#F0C05A; --ambar-fondo:rgba(240,192,90,.12); --ambar-borde:rgba(240,192,90,.35);
-  --azul-info:#7FB6E8; --azul-info-fondo:rgba(127,182,232,.10); --azul-info-borde:rgba(127,182,232,.32);
+  --info:#C9C0B7; --info-fondo:rgba(255,255,255,.04); --info-borde:#453D36;
   --sombra-flot:0 12px 32px rgba(0,0,0,.5);
 }
 
@@ -115,35 +115,69 @@ button,input,select{font:inherit;color:inherit}
 @media(max-width:640px){.btn-tema{margin-left:auto;order:3}}
 .btn-tema:hover{border-color:var(--rojo)}
 
-/* ---------- Hero + tarjeta flotante ---------- */
-.hero{
-  background:
-    linear-gradient(90deg, rgba(8,11,16,.90) 0%, rgba(8,11,16,.68) 42%, rgba(8,11,16,.30) 100%),
-    url(data:image/jpeg;base64,__BANNER_HERO__) right 60% / auto 175% no-repeat,
-    linear-gradient(180deg, var(--rojo) 0%, var(--rojo-oscuro) 100%);
-  color:#fff; padding:40px 0 84px;
+/* ---------- Hero (rediseño "north star": blanco, ilustración lineal) ---------- */
+.hero{background:var(--superficie); padding:44px 0 8px}
+@media(max-width:900px){.hero{padding:28px 0 4px}}
+.hero-interior{
+  max-width:1180px;margin:0 auto;padding:0 20px;
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,420px);gap:32px;align-items:center;
 }
-@media(max-width:640px){.hero{padding:28px 0 72px; background-position:30% 60%; background-size:auto 230%}}
-.hero-interior{max-width:1180px;margin:0 auto;padding:0 20px}
-@media(max-width:640px){.hero-interior{padding:0 16px}}
+@media(max-width:900px){.hero-interior{grid-template-columns:1fr;padding:0 16px;gap:6px}}
+.hero-texto{max-width:640px}
+.hero-ilustracion-caja{display:flex;align-items:center;justify-content:center}
+@media(max-width:900px){
+  .hero-ilustracion-caja{order:-1;margin:0 -8px}
+  .hero-ilustracion-caja img{max-width:min(100%,420px)}
+}
+.hero-ilustracion-caja img{width:100%;height:auto}
 .hero h1{
-  font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.02em;
-  margin:0 0 10px;line-height:1.12;text-wrap:balance;max-width:720px;
+  font-size:clamp(28px,3.6vw,44px);font-weight:800;letter-spacing:-.02em;
+  margin:0 0 12px;line-height:1.14;text-wrap:balance;color:var(--tinta);
 }
-.hero p{margin:0;font-size:clamp(15px,1.6vw,18px);opacity:.94;max-width:620px}
+.hero h1 .acento{color:var(--rojo)}
+.hero p{margin:0;font-size:clamp(15px,1.4vw,17.5px);color:var(--tinta-2);max-width:560px}
 .hero .paso{
-  display:inline-flex;align-items:center;gap:8px;margin-top:20px;
-  background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.28);
-  border-radius:999px;padding:8px 16px;font-size:13px;font-weight:700;
-  letter-spacing:.02em;text-transform:uppercase;
+  appearance:none;display:inline-flex;align-items:center;gap:9px;margin-top:22px;
+  background:var(--rojo);color:#fff;border:0;cursor:pointer;
+  border-radius:999px;padding:13px 22px;font-size:14.5px;font-weight:700;
+  box-shadow:0 8px 20px rgba(242,16,31,.28); transition:background .15s,transform .1s;
 }
+.hero .paso:hover{background:var(--rojo-oscuro)}
+.hero .paso:active{transform:translateY(1px)}
+.hero .paso svg{flex:0 0 auto}
+.icono-paso{max-width:16px;max-height:16px;width:auto;height:auto;flex:0 0 auto}
+
+/* Recuadros de beneficio */
+.beneficios{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:26px 0 0;
+}
+@media(max-width:900px){.beneficios{grid-template-columns:1fr}}
+.beneficio{
+  appearance:none;display:flex;align-items:center;gap:13px;text-align:left;
+  background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
+  padding:14px 16px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .1s;
+}
+.beneficio:hover{border-color:var(--rojo);box-shadow:0 8px 20px rgba(28,22,19,.08);transform:translateY(-1px)}
+/* Iconos de linea tecnica (trazo negro + acentos rojos sobre transparente):
+   en modo oscuro se invierten para verse claros sobre la superficie oscura,
+   conservando el rojo (invert + hue-rotate 180 devuelve el rojo a rojo). */
+:root[data-theme="dark"] .icono-tecnico{filter:invert(.9) hue-rotate(180deg)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .icono-tecnico{filter:invert(.9) hue-rotate(180deg)}
+}
+.beneficio img{max-width:34px;max-height:34px;width:auto;height:auto;flex:0 0 auto}
+.beneficio-texto-caja{display:flex;flex-direction:column;gap:2px;min-width:0}
+.beneficio-titulo{font-size:14px;font-weight:700;color:var(--tinta);line-height:1.25}
+.beneficio-texto{font-size:12.5px;color:var(--tenue);line-height:1.3}
 
 .tarjeta-filtros{
   background:var(--superficie);border-radius:var(--radio);
   box-shadow:var(--sombra-flot); border:1px solid var(--borde);
-  margin:-56px 0 0; padding:22px 24px 18px; position:relative; z-index:5;
+  margin:32px 0 0; padding:22px 24px 18px; position:relative; z-index:5;
 }
-@media(max-width:640px){.tarjeta-filtros{margin-top:-48px;padding:18px 16px 14px}}
+@media(max-width:640px){.tarjeta-filtros{margin-top:22px;padding:18px 16px 14px}}
+.campo-icono{display:flex;align-items:center;gap:8px}
+.campo-icono img{max-width:16px;max-height:16px;width:auto;height:auto;flex:0 0 auto}
 .fila-filtros{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
 @media(max-width:640px){.fila-filtros{grid-template-columns:1fr}}
 
@@ -155,6 +189,7 @@ button,input,select{font:inherit;color:inherit}
   cursor:pointer;width:100%;justify-content:flex-start;
 }
 .btn-mas-filtros:hover{border-color:var(--rojo);color:var(--rojo)}
+.icono-btn-filtro{max-width:15px;max-height:15px;width:auto;height:auto;flex:0 0 auto}
 .btn-mas-filtros .chev{margin-left:auto;transition:transform .15s}
 .btn-mas-filtros[aria-expanded="true"] .chev{transform:rotate(180deg)}
 .badge-filtros{
@@ -177,10 +212,12 @@ select:disabled{background:var(--zebra);color:var(--tenue);cursor:not-allowed;bo
 select:not(:disabled):hover,input:hover{border-color:var(--rojo)}
 select:focus,input:focus{border-color:var(--rojo)}
 .buscador-wrap{position:relative}
-.buscador-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--tenue)}
+.buscador-wrap svg,.buscador-wrap img{position:absolute;left:13px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--tenue)}
+.buscador-wrap img{max-width:16px;max-height:16px;width:auto;height:auto}
 .buscador-wrap input{padding-left:38px}
 .link-limpiar{
   appearance:none;background:transparent;border:0;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
   color:var(--rojo);font-weight:700;font-size:14px;min-height:48px;white-space:nowrap;
   padding:0 4px;
 }
@@ -196,7 +233,7 @@ select:focus,input:focus{border-color:var(--rojo)}
 }
 .mensaje .ic{flex:0 0 auto;font-size:16px;line-height:1.35}
 .mensaje.aviso{background:var(--ambar-fondo);border-color:var(--ambar-borde);color:var(--ambar)}
-.mensaje.dato{background:var(--azul-info-fondo);border-color:var(--azul-info-borde);color:var(--azul-info)}
+.mensaje.dato{background:var(--info-fondo);border-color:var(--info-borde);color:var(--info)}
 .mensaje.error{background:var(--naranja-suave);border-color:#EFC49E;color:#8A3B0A}
 .mensaje b{font-weight:700}
 
@@ -326,6 +363,94 @@ td.precio{text-align:right;white-space:nowrap}
 .paginas button:disabled{opacity:.4;cursor:default}
 .paginas button:not(:disabled):hover{border-color:var(--rojo);color:var(--rojo)}
 
+/* ---------- Vista rápida ---------- */
+.vista-rapida{max-width:1180px;margin:8px auto 0;padding:26px 20px 0}
+@media(max-width:640px){.vista-rapida{padding:20px 16px 0}}
+.vr-cabeza{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.vr-cabeza img{max-width:22px;max-height:22px;width:auto;height:auto;flex:0 0 auto}
+.vr-titulo{display:flex;flex-direction:column;gap:1px;margin-right:auto}
+.vr-titulo b{font-size:15px;font-weight:800;letter-spacing:.04em}
+.vr-titulo span{font-size:12.5px;color:var(--tenue);font-weight:400}
+.vr-ver-todos{
+  font-size:13.5px;font-weight:700;color:var(--rojo);text-decoration:none;
+  display:inline-flex;align-items:center;gap:4px;appearance:none;background:none;border:0;cursor:pointer;
+}
+.vr-ver-todos:hover{text-decoration:underline}
+.vr-carrusel-caja{position:relative}
+.vr-carrusel{
+  display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:10px;
+  scrollbar-width:thin;
+}
+.vr-carrusel::-webkit-scrollbar{height:6px}
+.vr-carrusel::-webkit-scrollbar-track{background:transparent}
+.vr-carrusel::-webkit-scrollbar-thumb{background:var(--borde-fuerte);border-radius:999px}
+.vr-tarjeta{
+  scroll-snap-align:start;flex:0 0 auto;width:200px;
+  background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
+  padding:16px;cursor:pointer;text-align:left;appearance:none;position:relative;
+  transition:border-color .15s,box-shadow .15s,transform .12s;
+}
+.vr-tarjeta:hover{border-color:var(--rojo);box-shadow:0 10px 24px rgba(28,22,19,.10);transform:translateY(-2px)}
+.vr-favorito{
+  position:absolute;top:12px;right:12px;background:none;border:0;cursor:pointer;padding:4px;
+  color:var(--borde-fuerte);line-height:0;
+}
+.vr-favorito img{max-width:17px;max-height:17px;width:auto;height:auto;display:block}
+.vr-favorito[data-activo="true"]{background:var(--naranja-suave);border-radius:50%}
+.vr-icono{width:100%;height:88px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.vr-icono img{max-width:100%;max-height:100%}
+.vr-nombre{font-size:14px;font-weight:700;line-height:1.3;min-height:36px}
+.vr-cod{font-size:11.5px;color:var(--tenue);margin-top:3px}
+.vr-precios{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.vr-precio{font-size:17px;font-weight:800;color:var(--tinta)}
+.vr-descuento{
+  background:var(--rojo);color:#fff;font-size:11.5px;font-weight:800;
+  border-radius:999px;padding:2px 8px;
+}
+.vr-stock{font-size:12px;color:#1D8A3D;font-weight:600;margin-top:6px}
+:root[data-theme="dark"] .vr-stock{color:#5FCB7E}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .vr-stock{color:#5FCB7E}}
+.vr-siguiente{
+  position:absolute;top:50%;right:-6px;transform:translateY(-50%);z-index:2;
+  width:36px;height:36px;border-radius:50%;background:var(--superficie);border:1px solid var(--borde-fuerte);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--sombra-flot);
+}
+.vr-siguiente:hover{border-color:var(--rojo);color:var(--rojo)}
+@media(max-width:640px){.vr-siguiente{display:none}}
+
+/* ---------- Panel de detalle (Vista rápida) ---------- */
+.panel-fondo{
+  position:fixed;inset:0;background:rgba(20,17,16,.44);z-index:100;
+  display:flex;justify-content:flex-end;
+}
+.panel-detalle{
+  background:var(--superficie);width:min(420px,100%);height:100%;overflow-y:auto;
+  padding:24px 22px 32px;box-shadow:-12px 0 32px rgba(0,0,0,.18);
+  animation:panel-entra .18s ease-out;
+}
+@keyframes panel-entra{from{transform:translateX(24px);opacity:0}to{transform:translateX(0);opacity:1}}
+.panel-cerrar{
+  appearance:none;background:var(--zebra);border:1px solid var(--borde);border-radius:50%;
+  width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--tinta-2);float:right;
+}
+.panel-cerrar:hover{border-color:var(--rojo);color:var(--rojo)}
+.panel-icono{width:100%;height:150px;display:flex;align-items:center;justify-content:center;margin:8px 0 14px;clear:both}
+.panel-icono img{max-width:70%;max-height:100%}
+.panel-detalle h3{margin:0 0 4px;font-size:19px;font-weight:800;clear:both}
+.panel-detalle .cod{font-size:13px;color:var(--tenue);margin-bottom:14px}
+.panel-precios{display:flex;align-items:baseline;gap:10px;margin-bottom:18px}
+.panel-precios .remate{font-size:28px;font-weight:800;color:var(--rojo)}
+.panel-precios .normal{font-size:14px;color:var(--tenue);text-decoration:line-through}
+.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-bottom:18px}
+.panel-grid div{display:flex;flex-direction:column;gap:2px}
+.panel-grid .etiqueta{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tenue)}
+.panel-grid .valor{font-size:13.5px;color:var(--tinta)}
+.panel-cta{
+  display:block;width:100%;text-align:center;background:var(--rojo);color:#fff;border:0;
+  border-radius:var(--radio-chico);padding:14px;font-size:14.5px;font-weight:700;cursor:pointer;
+}
+.panel-cta:hover{background:var(--rojo-oscuro)}
+
 /* ---------- Ayuda (pasos) ---------- */
 .ayuda-pasos{
   background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);
@@ -362,9 +487,41 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
   <section id="vista-consulta">
     <div class="hero">
       <div class="hero-interior">
-        <h1>Liquidación de Productos en Obsolescencia</h1>
-        <p>Consulta los productos disponibles para liquidación según tu zona; acota por tienda y subcategoría si quieres.</p>
-        <span class="paso" id="paso-actual">Selecciona tu zona para comenzar</span>
+        <div class="hero-texto">
+          <h1>Liquidación de <span class="acento">Productos</span> en Obsolescencia</h1>
+          <p>Consulta los productos disponibles para liquidación según tu zona; acota por tienda y subcategoría si quieres. Encuentra oportunidades y optimiza tu inventario.</p>
+          <button class="paso" id="paso-actual" type="button">
+            <img class="icono-tecnico icono-paso" src="data:image/png;base64,__ICONO_ZONA__" alt="">
+            <span id="paso-actual-texto">Selecciona tu zona para comenzar</span>
+          </button>
+
+          <div class="beneficios">
+            <button class="beneficio" type="button" title="Encuentra productos en segundos">
+              <img class="icono-tecnico" src="data:image/png;base64,__ICONO_CONSULTA_RAPIDA__" alt="">
+              <span class="beneficio-texto-caja">
+                <span class="beneficio-titulo">Consulta rápida</span>
+                <span class="beneficio-texto">Encuentra productos en segundos</span>
+              </span>
+            </button>
+            <button class="beneficio" type="button" id="btnBeneficioDescarga" title="Exporta resultados en un clic">
+              <img class="icono-tecnico" src="data:image/png;base64,__ICONO_EXPORTAR__" alt="">
+              <span class="beneficio-texto-caja">
+                <span class="beneficio-titulo">Descarga listado</span>
+                <span class="beneficio-texto">Exporta resultados en un clic</span>
+              </span>
+            </button>
+            <button class="beneficio" type="button" id="btnBeneficioAplicacion" title="Filtra por marca, modelo y año fácilmente">
+              <img class="icono-tecnico" src="data:image/png;base64,__ICONO_VEHICULO__" alt="">
+              <span class="beneficio-texto-caja">
+                <span class="beneficio-titulo">Aplicaciones por vehículo</span>
+                <span class="beneficio-texto">Filtra por marca, modelo y año fácilmente</span>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div class="hero-ilustracion-caja">
+          <img class="icono-tecnico" src="data:image/png;base64,__HERO_ILUSTRACION__" alt="Ilustración de repuestos: kit de embrague, discos de freno, amortiguador, óptico, terminales de dirección, bujía y filtro de aire" width="700" height="300">
+        </div>
       </div>
     </div>
 
@@ -372,23 +529,23 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
       <div class="tarjeta-filtros">
         <div class="fila-filtros">
           <div class="campo">
-            <label for="fZona">Zona</label>
+            <label for="fZona" class="campo-icono"><img class="icono-tecnico" src="data:image/png;base64,__ICONO_ZONA__" alt="">Zona</label>
             <select id="fZona"></select>
           </div>
           <div class="campo">
-            <label for="fTienda">Tienda</label>
+            <label for="fTienda" class="campo-icono"><img class="icono-tecnico" src="data:image/png;base64,__ICONO_TIENDA__" alt="">Tienda</label>
             <select id="fTienda" disabled></select>
             <span class="ayuda" id="ayuda-tienda">Selecciona primero tu zona</span>
           </div>
           <div class="campo">
-            <label for="fSubcat">Subcategoría</label>
+            <label for="fSubcat" class="campo-icono"><img class="icono-tecnico" src="data:image/png;base64,__ICONO_SUBCATEGORIA__" alt="">Subcategoría</label>
             <select id="fSubcat" disabled></select>
             <span class="ayuda" id="ayuda-subcat">Selecciona primero tu zona</span>
           </div>
         </div>
 
         <button class="btn-mas-filtros" id="btnMasFiltros" type="button" aria-expanded="false" aria-controls="bloqueAplicacion">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <img class="icono-tecnico icono-btn-filtro" src="data:image/png;base64,__ICONO_FILTRO__" alt="">
           Filtros de aplicación (Marca, Modelo, Año)
           <span class="badge-filtros" id="badgeMasFiltros" hidden>0</span>
           <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -413,18 +570,41 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
 
         <div class="fila-buscar">
           <div class="campo">
-            <label for="fBuscar">Buscar</label>
+            <label for="fBuscar">Buscar producto</label>
             <div class="buscador-wrap">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              <input type="search" id="fBuscar" placeholder="Material, marca, modelo, motor, año…" disabled autocomplete="off">
+              <img class="icono-tecnico" src="data:image/png;base64,__ICONO_BUSCAR__" alt="">
+              <input type="search" id="fBuscar" placeholder="Ingresa nombre, código, marca, modelo o año…" disabled autocomplete="off">
             </div>
           </div>
-          <button class="link-limpiar" id="btnLimpiar" type="button">Limpiar filtros</button>
+          <button class="link-limpiar" id="btnLimpiar" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1 1 2.6 6.36M3 12V6m0 6h6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Limpiar filtros
+          </button>
         </div>
       </div>
     </div>
 
     <div class="mensajes" id="mensajes"></div>
+
+    <div class="vista-rapida" id="vistaRapida" hidden>
+      <div class="vr-cabeza">
+        <img class="icono-tecnico" src="data:image/png;base64,__ICONO_VISTA__" alt="">
+        <div class="vr-titulo">
+          <b>VISTA RÁPIDA</b>
+          <span id="vrSubtitulo">Los productos con más stock a nivel nacional</span>
+        </div>
+        <button class="vr-ver-todos" id="btnVerTodos" type="button">
+          Ver todos los productos
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="vr-carrusel-caja">
+        <div class="vr-carrusel" id="vrCarrusel"></div>
+        <button class="vr-siguiente" id="vrSiguiente" type="button" aria-label="Ver siguiente producto">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
 
     <div class="seccion" id="zona-resultados" hidden>
       <div class="controles-orden">
@@ -499,8 +679,31 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
   </footer>
 </div>
 
+<div id="panelFondo" class="panel-fondo" hidden></div>
+
 <script>
 const D = /*__DATOS__*/null;
+
+/* Iconos de Vista Rápida: mapa clave-icono -> data URI (los reemplaza
+   generar_portal.py igual que cualquier otro marcador __ICONO_...__). */
+const ICONOS_DESTACADOS = {
+  icono_kit_embrague: 'data:image/png;base64,__ICONO_KIT_EMBRAGUE__',
+  icono_disco_freno: 'data:image/png;base64,__ICONO_DISCO_FRENO__',
+  icono_bujia: 'data:image/png;base64,__ICONO_BUJIA__',
+  icono_amortiguador: 'data:image/png;base64,__ICONO_AMORTIGUADOR__',
+  icono_filtro_aire: 'data:image/png;base64,__ICONO_FILTRO_AIRE__',
+};
+
+/* Vista rápida: subcategorías reales detrás de cada ícono (mismo criterio
+   que se usaba antes en Python, ahora en JS para que reaccione al filtro
+   de Zona sin tener que regenerar el sitio). */
+const CATEGORIAS_DESTACADAS = [
+  {categoria: 'Kit de Embrague', icono: 'icono_kit_embrague', subcats: ['KIT DE EMBRAGUE']},
+  {categoria: 'Disco de Freno', icono: 'icono_disco_freno', subcats: ['DISCO DE FRENO DELANTERO', 'DISCO DE FRENO TRASERO']},
+  {categoria: 'Bujía', icono: 'icono_bujia', subcats: ['BUJIA INCANDESCENTE']},
+  {categoria: 'Amortiguador', icono: 'icono_amortiguador', subcats: ['AMORTIGUADOR DELANTERO', 'AMORTIGUADOR TRASERO']},
+  {categoria: 'Filtro de Aire', icono: 'icono_filtro_aire', subcats: ['FILTRO DE AIRE']},
+];
 
 /* ---------------- utilidades ---------------- */
 const NF = new Intl.NumberFormat('es-CL');
@@ -749,13 +952,14 @@ function pintarResultados(filas){
 }
 
 function actualizarPaso(){
-  const paso = $('paso-actual');
+  const paso = $('paso-actual-texto');
   if (!estado.zona) paso.textContent = 'Selecciona tu zona para comenzar';
   else if (!estado.subcat) paso.textContent = 'Elige una subcategoría o mira todos los productos';
   else paso.textContent = 'Consultando productos disponibles para liquidación';
 }
 
 function render(){
+  pintarVistaRapida();
   llenarSelect($('fZona'), D.zonas, estado.zona, false);
   llenarSelect($('fTienda'), opcionesTienda(), estado.tienda, !estado.zona);
   llenarSelect($('fSubcat'), opcionesSubcat(), estado.subcat, !estado.zona);
@@ -869,6 +1073,178 @@ $('btnDescargar').addEventListener('click', ()=>{
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download=partes.join('_')+'.csv'; a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+});
+
+/* ---------------- Vista rápida ---------------- */
+const FAVORITOS_KEY = 'ap-favoritos';
+function obtenerFavoritos(){
+  try { return new Set(JSON.parse(localStorage.getItem(FAVORITOS_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function alternarFavorito(material){
+  const favs = obtenerFavoritos();
+  if (favs.has(material)) favs.delete(material); else favs.add(material);
+  localStorage.setItem(FAVORITOS_KEY, JSON.stringify([...favs]));
+  return favs.has(material);
+}
+
+/* Recalcula, para cada categoría de ícono, el producto REAL con mayor
+   stock -- dentro de la zona actualmente filtrada, o a nivel nacional si
+   no hay zona seleccionada. Se recalcula en cada render(), nunca se
+   inventa un producto: si una categoría no tiene stock en la zona activa,
+   se omite esa tarjeta. */
+function calcularDestacados(){
+  const zi = estado.zona ? D.zonas.indexOf(estado.zona) : -1;
+  const resultado = [];
+  for (const cat of CATEGORIAS_DESTACADAS){
+    const subIdx = new Set(cat.subcats.map(s => D.subcats.indexOf(s)).filter(i => i >= 0));
+    let mejor = null;
+    for (const f of D.filas){
+      if (zi >= 0 && f[Z] !== zi) continue;
+      if (!subIdx.has(f[SC])) continue;
+      if (f[ST] == null || f[ST] <= 0) continue;
+      if (!mejor || f[ST] > mejor[ST]) mejor = f;
+    }
+    if (!mejor) continue;
+    const precioNormal = mejor[PN];
+    const valorRemate = mejor[VR];
+    const descuentoPct = (precioNormal && valorRemate != null && precioNormal > 0)
+      ? Math.round((1 - valorRemate / precioNormal) * 100) : null;
+    resultado.push({
+      categoria: cat.categoria, icono: cat.icono,
+      material: D.materiales[mejor[M]], texto: D.textos[mejor[X]], marca: D.marcas[mejor[MA]],
+      subcategoria: D.subcats[mejor[SC]],
+      marcaVehiculo: mejor[MV] >= 0 ? D.marcasVehiculo[mejor[MV]] : null,
+      modelo: mejor[MO] >= 0 ? D.modelos[mejor[MO]] : null,
+      motor: mejor[MT] >= 0 ? D.motores[mejor[MT]] : null,
+      anios: mejor[AN] >= 0 ? D.anios[mejor[AN]] : null,
+      zona: D.zonas[mejor[Z]], tienda: D.tiendas[mejor[T]],
+      stock: mejor[ST], precioNormal, valorRemate, descuentoPct,
+    });
+  }
+  return resultado;
+}
+
+function tarjetaDestacadoHtml(d, i){
+  const activo = obtenerFavoritos().has(d.material);
+  const icono = ICONOS_DESTACADOS[d.icono] || '';
+  const descuento = d.descuentoPct != null ? `<span class="vr-descuento">-${d.descuentoPct}%</span>` : '';
+  return `<div class="vr-tarjeta" data-i="${i}" role="button" tabindex="0">
+    <button class="vr-favorito" data-i="${i}" type="button" aria-label="Marcar como favorito" data-activo="${activo}">
+      <img class="icono-tecnico" src="data:image/png;base64,__ICONO_FAVORITO__" alt="">
+    </button>
+    <div class="vr-icono"><img class="icono-tecnico" src="${icono}" alt=""></div>
+    <div class="vr-nombre">${esc(d.categoria)}</div>
+    <div class="vr-cod">${esc(d.material)}</div>
+    <div class="vr-precios">
+      <span class="vr-precio">${clp(d.valorRemate)}</span>
+      ${descuento}
+    </div>
+    <div class="vr-stock">Stock: ${num(d.stock)} unidades</div>
+  </div>`;
+}
+
+function pintarVistaRapida(){
+  const destacados = calcularDestacados();
+  $('vrSubtitulo').textContent = estado.zona
+    ? `Los productos con más stock en ${estado.zona}`
+    : 'Los productos con más stock a nivel nacional';
+  if (!destacados.length){ $('vistaRapida').hidden = true; return; }
+  $('vistaRapida').hidden = false;
+  $('vrCarrusel').innerHTML = destacados.map((d, i) => tarjetaDestacadoHtml(d, i)).join('');
+  $('vrCarrusel').querySelectorAll('.vr-tarjeta').forEach(el=>{
+    const abre = () => abrirPanelDestacado(destacados[+el.dataset.i]);
+    el.addEventListener('click', abre);
+    el.addEventListener('keydown', e=>{ if (e.key==='Enter' || e.key===' '){ e.preventDefault(); abre(); } });
+  });
+  $('vrCarrusel').querySelectorAll('.vr-favorito').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const d = destacados[+btn.dataset.i];
+      btn.dataset.activo = String(alternarFavorito(d.material));
+    });
+  });
+}
+$('vrSiguiente').addEventListener('click', ()=>{
+  $('vrCarrusel').scrollBy({left: 220, behavior:'smooth'});
+});
+
+/* ---------------- Panel de detalle (Vista rápida) ---------------- */
+function abrirPanelDestacado(d){
+  const icono = ICONOS_DESTACADOS[d.icono] || '';
+  const campos = [];
+  if (d.marcaVehiculo) campos.push(['Marca del vehículo', esc(d.marcaVehiculo)]);
+  if (d.modelo) campos.push(['Modelo', esc(d.modelo)]);
+  if (d.motor) campos.push(['Motor', esc(d.motor)]);
+  if (d.anios) campos.push(['Años de aplicación', esc(d.anios)]);
+  campos.push(['Zona', esc(d.zona)]);
+  campos.push(['Tienda', esc(d.tienda)]);
+  campos.push(['Subcategoría', esc(d.subcategoria)]);
+  campos.push(['Marca', esc(d.marca)]);
+  campos.push(['Stock disponible', num(d.stock) + ' unidades']);
+
+  const fondo = $('panelFondo');
+  fondo.innerHTML = `<div class="panel-detalle" role="dialog" aria-modal="true" aria-label="Detalle de ${esc(d.texto)}">
+    <button class="panel-cerrar" id="panelCerrarBtn" type="button" aria-label="Cerrar">✕</button>
+    <div class="panel-icono"><img class="icono-tecnico" src="${icono}" alt=""></div>
+    <h3>${esc(d.texto)}</h3>
+    <div class="cod">${esc(d.material)} · ${esc(d.marca)}</div>
+    <div class="panel-precios">
+      <span class="remate">${clp(d.valorRemate)}</span>
+      ${d.precioNormal ? `<span class="normal">${clp(d.precioNormal)}</span>` : ''}
+    </div>
+    <div class="panel-grid">
+      ${campos.map(([l, v]) => `<div><span class="etiqueta">${esc(l)}</span><span class="valor">${v}</span></div>`).join('')}
+    </div>
+    <button class="panel-cta" id="panelCtaBtn" type="button">Ver resultados filtrados</button>
+  </div>`;
+  fondo.hidden = false;
+  document.body.style.overflow = 'hidden';
+
+  $('panelCerrarBtn').addEventListener('click', cerrarPanel);
+  fondo.addEventListener('click', e => { if (e.target === fondo) cerrarPanel(); });
+  $('panelCtaBtn').addEventListener('click', ()=>{
+    cerrarPanel();
+    estado.zona = d.zona; estado.tienda = d.tienda; estado.subcat = d.subcategoria;
+    estado.marcaVeh=''; estado.modelo=''; estado.anio=''; estado.q=''; estado.pagina=1;
+    render();
+    $('zona-resultados').scrollIntoView({behavior:'smooth', block:'start'});
+  });
+}
+function cerrarPanel(){
+  $('panelFondo').hidden = true;
+  $('panelFondo').innerHTML = '';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('panelFondo').hidden) cerrarPanel(); });
+
+/* ---------------- CTA y tarjetas de beneficio ---------------- */
+$('paso-actual').addEventListener('click', ()=>{
+  document.querySelector('.tarjeta-filtros').scrollIntoView({behavior:'smooth', block:'center'});
+  $('fZona').focus();
+});
+$('btnBeneficioDescarga').addEventListener('click', ()=>{
+  const objetivo = estado.zona ? $('btnDescargar') : $('fZona');
+  objetivo.scrollIntoView({behavior:'smooth', block:'center'});
+  objetivo.focus();
+});
+$('btnBeneficioAplicacion').addEventListener('click', ()=>{
+  if (!estado.zona){
+    $('fZona').scrollIntoView({behavior:'smooth', block:'center'});
+    $('fZona').focus();
+    return;
+  }
+  const bloque = $('bloqueAplicacion');
+  if (!bloque.classList.contains('abierto')) $('btnMasFiltros').click();
+  bloque.scrollIntoView({behavior:'smooth', block:'center'});
+});
+$('btnVerTodos').addEventListener('click', ()=>{
+  if (!estado.zona){
+    $('fZona').scrollIntoView({behavior:'smooth', block:'center'});
+    $('fZona').focus();
+    return;
+  }
+  $('zona-resultados').scrollIntoView({behavior:'smooth', block:'start'});
 });
 
 /* ---------------- tema ---------------- */

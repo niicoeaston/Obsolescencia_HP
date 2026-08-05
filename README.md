@@ -27,7 +27,8 @@ filtros son para acotar, no para desbloquear resultados.
 | `anios.py` | Interpreta la columna Año (rangos abiertos, años sueltos, formatos varios) sin nunca duplicar filas. Ver sección 3. |
 | `logo_grupo_planet_b64.txt` | Logo de Grupo Planet en base64 (footer). |
 | `logo_autoplanet_b64.txt` | Logo real de Autoplanet en base64 (header). |
-| `banner_hero_b64.txt` | Banner de Talleres Autoplanet en base64, re-comprimido a JPEG (fondo del hero). |
+| `banner_hero_b64.txt` | Banner de Talleres Autoplanet en base64, re-comprimido a JPEG (ya no se usa como fondo del hero desde el rediseño "north star", ver sección 10, pero se deja por si se necesita). |
+| `assets_src/` | Ilustración del hero e íconos del rediseño visual (PNG con fondo transparente), y el script que los recorta desde las referencias del usuario. Ver sección 10. |
 
 El proyecto reutiliza el procesador de datos ya construido y probado en
 `../dashboard-obsolescencia/src/services/cargador_excel.py` (limpieza,
@@ -301,3 +302,79 @@ información comercial sensible.
   en `plantilla_portal.html`.
 - Dos sitios publicados (misma cuenta) significa dos `git push` cada vez
   que se actualizan los datos — si se olvida uno, quedan desincronizados.
+
+---
+
+## 10. Rediseño visual "north star"
+
+El portal se rediseñó visualmente tomando como referencia una imagen
+(`Elementos/north star.png`) que el usuario compartió: fondo blanco,
+paleta AutoPlanet, ilustraciones vectoriales lineales, hero con
+titular/CTA/beneficios, sección "Vista rápida" y panel de detalle lateral.
+**Se mantuvo intacta toda la lógica funcional** (filtros, búsqueda, carga
+de datos, CSV, responsive, publicación) — el cambio es de diseño, no de
+arquitectura.
+
+### Origen de los assets (sin IA — créditos agotados)
+
+El generador de imágenes con IA (nano-banana) no tenía créditos de prepago
+disponibles. El usuario dejó en `Elementos/` capturas de un set de íconos
+de línea técnica ya diseñado (composición del hero, 16 íconos de
+repuestos, 24 íconos de interfaz). `portal-web/assets_src/recortar_iconos.py`
+recorta cada ícono individual de esas hojas de referencia (detectando la
+grilla y el bounding box real del trazo, excluyendo las etiquetas de texto
+en inglés que eran solo para identificar cada ícono), vuelve transparente
+el fondo blanco y cuantiza a paleta indexada (Fast Octree) para que el
+peso final sea manejable (~120 KB en total para 17 assets, incluida la
+ilustración del hero). No se generó ni inventó ningún gráfico nuevo.
+
+### Piezas nuevas
+
+- **Hero**: fondo blanco, titular con jerarquía de color ("Productos" en
+  rojo), ilustración de repuestos a la derecha (kit de embrague, discos de
+  freno, pastillas, óptico, terminales de dirección, bujía, amortiguador,
+  filtro de aire), CTA real (antes era solo una etiqueta de estado) y tres
+  recuadros de beneficio.
+- **Vista rápida**: sección nueva, **dinámica según la Zona filtrada**
+  (recalculada en JS en cada `render()`, no precomputada en Python). Muestra
+  5 categorías (Kit de Embrague, Disco de Freno, Bujía, Amortiguador, Filtro
+  de Aire) — para cada una se elige el **producto real con mayor stock
+  disponible dentro de la zona activa** (o a nivel nacional si no hay zona
+  seleccionada); nunca se inventan productos ni precios, y si una categoría
+  no tiene stock en la zona activa esa tarjeta simplemente se omite. Es un
+  carrusel horizontal con snap. El mapeo categoría → subcategorías reales
+  vive en `CATEGORIAS_DESTACADAS` dentro de `plantilla_portal.html`.
+- **Panel de detalle lateral**: al hacer clic en una tarjeta de Vista
+  Rápida se abre un panel (se convierte en pantalla completa en móvil) con
+  aplicación vehicular, zona, tienda, subcategoría, stock y un botón "Ver
+  resultados filtrados" que aplica esa zona/tienda/subcategoría a la
+  consulta real y hace scroll a los resultados.
+- **Favoritos**: la estrella de cada tarjeta de Vista Rápida se guarda en
+  `localStorage` (no requiere cuenta ni backend).
+- **Modo oscuro para los íconos nuevos**: como son imágenes (no SVG con
+  `currentColor`), se invierten con `filter:invert(.9) hue-rotate(180deg)`
+  en tema oscuro — esto vuelve el trazo negro a blanco y devuelve el rojo
+  a rojo (en vez de invertirlo a cian), sin necesidad de generar una
+  segunda versión de cada ícono.
+
+### Ajustes tras la revisión del usuario
+
+- El mensaje informativo ("Selecciona una zona...") usaba una paleta azul
+  (`--azul-info`) que no pertenecía a la identidad AutoPlanet. Se renombró a
+  `--info`/`--info-fondo`/`--info-borde` con tonos grises neutros,
+  consistentes con el resto de la paleta.
+- Varios íconos nuevos (el pin de Zona, el ícono de vehículo, el ojo de
+  Vista Rápida, etc.) se veían desproporcionados: las reglas CSS los
+  forzaban a un cuadrado exacto (`width` y `height` iguales) ignorando el
+  aspecto real de cada recorte (por ejemplo, el pin de Zona es 71×101px,
+  bastante más alto que ancho). Se corrigió a `max-width`/`max-height` +
+  `width:auto;height:auto` en todos los íconos nuevos, preservando su
+  proporción real.
+
+### Qué NO cambió
+
+Los filtros (Zona/Tienda/Subcategoría/Marca/Modelo/Año), la búsqueda, la
+apertura de años, la tabla/tarjetas de resultados con "Ver detalle", la
+descarga CSV y el pipeline de generación/publicación siguen exactamente
+igual — solo se les actualizó el estilo visual (íconos junto a las
+etiquetas, botón de descarga, "Limpiar filtros").
