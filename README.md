@@ -622,4 +622,105 @@ Playwright en tema claro y oscuro, y en ancho móvil (390px): las 8+
 tarjetas probadas quedan uniformes, sin superposición del título con el
 botón de favorito y sin huecos donde antes iba el ícono.
 
+## 13. Actualización diaria de stock ("Agotado" + `actualizar_stock.py`)
+
+A partir del 2026-08-06 el usuario deja diariamente un archivo de stock real
+(exportado desde SAP) en `Actualizacion de Stock/Stock_DD_MM.xlsx` (día/mes
+de hoy), con el stock "Libre utilización" por producto y centro/tienda. Se
+construyó un pipeline para mantener el "Stock AP" del listado maestro
+(`dashboard-obsolescencia/data/Listado Obsolecencia.xlsx`, hoja `Base`) al
+día con ese archivo, sin perder productos que llegan a stock 0.
+
+### Por qué antes no se podía dejar un producto en stock 0
+
+El cargador compartido (`dashboard-obsolescencia/src/services/cargador_excel.py`,
+usado tanto por el portal como por el dashboard interno) descartaba del
+listado cualquier fila con `stock > STOCK_MINIMO` estricto (STOCK_MINIMO=0),
+es decir, **stock exactamente 0 se eliminaba del listado por completo** en
+vez de mostrarse como agotado. Se cambió esa comparación a `>=`
+(`_validar()`, línea ~315): con STOCK_MINIMO=0 el filtro ahora significa
+literalmente "sin mínimo", y dejó de excluir los ceros. Esto afecta también
+al dashboard interno (comparten el mismo cargador), pero es una corrección
+de semántica, no un cambio de comportamiento deseado en otro lado.
+
+### Cómo se ve "Agotado" en el portal
+
+En `plantilla_portal.html`, tanto `filaTablaHtml()` (tabla de escritorio)
+como `tarjetaProdHtml()` (tarjetas móviles) revisan `f[ST] <= 0`: si es
+así, la celda/línea de stock muestra un badge `.badge-agotado` ("Agotado")
+en vez del número, y el botón "Agregar a mi selección" queda `disabled`
+(con `title="Producto agotado"`). `agregarASeleccion()` además valida
+`item.stock <= 0` como segunda barrera (por si se llega a invocar por otra
+vía) y muestra un mensaje de error en vez de agregar la línea. Los
+productos agotados siguen apareciendo en los filtros normales (Zona,
+Tienda, Subcategoría, búsqueda) — solo cambia cómo se muestra su stock y
+que no se pueden agregar a la selección. Vista Rápida ya los excluía
+automáticamente (`seleccionarTopStock` solo considera `stock > 0`), así
+que no requirió cambios.
+
+### `portal-web/actualizar_stock.py`
+
+Script nuevo que cruza el archivo diario contra el listado maestro y
+actualiza el stock en el Excel real (no en el portal generado). Reglas de
+negocio, confirmadas explícitamente con el usuario el 2026-08-06:
+
+- **Cruce Centro/Tienda**: la columna "Nombre 1" del archivo diario trae la
+  misma etiqueta de tienda que usa el maestro (ej. "AP0001-La Florida"), así
+  que el cruce es por nombre exacto — excepto el Centro de Distribución
+  (Centro SAP `0714`), cuyo "Nombre 1" es un nombre de operador ("Ega-Kat")
+  y no una tienda; para ese caso se usa el código fijo `"0714"`, que es
+  como aparece la fila de CD en el maestro.
+- **Solo almacén `1100`**: filas del archivo diario con otro código de
+  almacén (ej. `1600`) se ignoran por completo, aunque la tienda sí
+  aparezca ese día (elegido explícitamente por el usuario en vez de sumar
+  todos los almacenes).
+- **Tienda ausente = no se toca**: si una tienda del maestro no aparece en
+  absoluto en el archivo del día (en ningún almacén), su stock se deja
+  intacto y se reporta como "tienda ausente" — para no marcar como agotado
+  un local completo por un posible error de exportación SAP.
+- **Productos nuevos se ignoran y se reportan**: si el archivo diario trae
+  un Material+Tienda que no existe en el listado maestro, no se agrega
+  (falta precio, marca, categoría, aplicación vehicular — datos que el
+  archivo diario no trae) pero se lista aparte para revisión manual.
+- **Nunca se escribe stock negativo**: SAP puede traer "Libre utilización"
+  negativa (ajustes de inventario). Escribirla tal cual hacía que esas
+  filas fueran descartadas por completo por el filtro de stock del
+  cargador (`stock >= 0`), en vez de quedar marcadas como Agotado. Se
+  detectó con datos reales (7 filas el primer día) y se corrigió con
+  `nuevo = max(0, ...)` antes de escribir.
+- **Respaldo automático**: antes de sobrescribir, copia el listado maestro
+  a `Actualizacion de Stock/respaldos/Listado Obsolecencia (antes de
+  Stock_DD_MM).xlsx`.
+
+Uso: `python actualizar_stock.py` (usa la fecha de hoy) o
+`python actualizar_stock.py DD MM` (fuerza fecha, para pruebas/rezagados).
+Imprime un reporte con tiendas cubiertas/ausentes y el detalle de productos
+que subieron, bajaron, pasaron a agotado, se recuperaron o se ignoraron por
+ser nuevos.
+
+### Automatización diaria (cron de la sesión)
+
+Se programó un cron (`CronCreate`, 10:04am todos los días) que: busca el
+archivo del día, corre `actualizar_stock.py` y `generar_portal.py`, y le
+muestra al usuario un resumen del reporte — **sin publicar** en GitHub
+Pages hasta que el usuario confirme explícitamente (decisión tomada con el
+usuario: prefiere revisar el resumen antes de publicar, al menos al
+comienzo). Limitación importante que se le explicó al usuario: este cron
+vive solo dentro de la sesión de Claude Code actual (no se guarda en
+disco) y expira automáticamente a los 7 días — si se necesita algo
+verdaderamente permanente (que sobreviva a cerrar la sesión), se necesita
+una tarea programada del sistema operativo (Task Scheduler de Windows)
+corriendo el script de forma independiente.
+
+### Verificado
+
+Con el archivo real `Stock_06_08.xlsx`: 89 tiendas cubiertas, 0 ausentes,
+589 productos actualizados (13 subieron, 56 bajaron, 520 pasaron a
+Agotado, 0 recuperados), 65 productos del día ignorados por no estar en el
+listado. Confirmado con Playwright que un producto en stock 0 muestra el
+badge "Agotado" y botón deshabilitado (escritorio y móvil, 390px) y que un
+producto con stock normal no se ve afectado. Conteo total de productos en
+el listado se mantuvo en 17.594 antes y después (ningún producto se perdió
+por el cruce ni por el fix de stock negativo).
+
 Archivo modificado: solo `portal-web/plantilla_portal.html`.
