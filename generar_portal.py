@@ -19,7 +19,6 @@ Salida:
 from __future__ import annotations
 
 import json
-import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -60,14 +59,11 @@ ASSETS_VISUALES = {
     "__ICONO_VEHICULO__": "icono_vehiculo.png",
     "__ICONO_VISTA__": "icono_vista.png",
     "__ICONO_FAVORITO__": "icono_favorito.png",
-    "__ICONO_TEMA__": "icono_tema.png",
     "__ICONO_KIT_EMBRAGUE__": "icono_kit_embrague.png",
     "__ICONO_DISCO_FRENO__": "icono_disco_freno.png",
     "__ICONO_PASTILLAS_FRENO__": "icono_pastillas_freno.png",
     "__ICONO_FARO__": "icono_faro.png",
     "__ICONO_BUJIA__": "icono_bujia.png",
-    "__ICONO_AMORTIGUADOR__": "icono_amortiguador.png",
-    "__ICONO_FILTRO_AIRE__": "icono_filtro_aire.png",
 }
 
 # --- Vista rapida: subcategorias detras de cada icono disponible. El
@@ -276,11 +272,6 @@ def main() -> int:
     }
 
     html = PLANTILLA.read_text(encoding="utf-8")
-    html = re.sub(
-        r"\.normalize\('NFD'\)\.replace\(/\[[^\]]*\]/g, ''\)",
-        r".normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')",
-        html,
-    )
     html = html.replace("__LOGO_GRUPO_PLANET__", LOGO_GRUPO_PLANET_B64)
     html = html.replace("__LOGO_AUTOPLANET__", LOGO_AUTOPLANET_B64)
     for marcador, archivo in ASSETS_VISUALES.items():

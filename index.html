@@ -1049,9 +1049,7 @@ function contenidoDetalle(f){
   return campos;
 }
 function tiendaCorta(f){
-  const t = D.tiendas[f[T]];
-  const i = t.indexOf('–');
-  return i>=0 ? t.slice(i+1).trim() : t;
+  return nombreDeTienda(D.tiendas[f[T]]);
 }
 function filaTablaHtml(f, mostrarSubcat, mostrarTienda, i){
   const agotado = f[ST] <= 0;
@@ -1355,7 +1353,7 @@ function seleccionarTopStock(filas, limite){
 function tarjetaDestacadoHtml(d, i){
   const activo = obtenerFavoritos().has(d.material);
   const descuento = d.descuentoPct != null ? `<span class="vr-descuento">-${d.descuentoPct}%</span>` : '';
-  const tiendaNombre = d.tienda.includes('–') ? d.tienda.split('–')[1].trim() : d.tienda;
+  const tiendaNombre = nombreDeTienda(d.tienda);
   return `<div class="vr-tarjeta" data-i="${i}" role="button" tabindex="0">
     <button class="vr-favorito" data-i="${i}" type="button" aria-label="Marcar como favorito" data-activo="${activo}">
       <img class="icono-tecnico" src="data:image/png;base64,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" alt="">
@@ -1524,6 +1522,11 @@ function codigoDeTienda(tiendaCompleta){
   const i = String(tiendaCompleta).indexOf('–');
   return i>=0 ? tiendaCompleta.slice(0,i).trim() : String(tiendaCompleta);
 }
+function nombreDeTienda(tiendaCompleta){
+  const t = String(tiendaCompleta);
+  const i = t.indexOf('–');
+  return i>=0 ? t.slice(i+1).trim() : t;
+}
 function idLinea(item){
   return `${item.material}|${codigoDeTienda(item.tienda)}|${item.zona}`;
 }
@@ -1661,10 +1664,6 @@ function stockActualDeLinea(linea){
   const f = buscarFilaActual(linea);
   return f ? f[ST] : null;
 }
-function precioActualDeLinea(linea){
-  const f = buscarFilaActual(linea);
-  return f ? f[VR] : null;
-}
 function cambiarCantidad(id, delta){
   const linea = SELECCION.lineas.find(l => l.id===id);
   if (!linea) return;
@@ -1773,7 +1772,7 @@ function lineaSeleccionHtml(linea){
   }
 
   const tiendaCodigo = codigoDeTienda(linea.tienda);
-  const tiendaNombre = linea.tienda.includes('–') ? linea.tienda.split('–')[1].trim() : linea.tienda;
+  const tiendaNombre = nombreDeTienda(linea.tienda);
   const total = totalLinea(linea);
   const obsAbierta = !!linea._obsAbierta;
 
@@ -1963,7 +1962,7 @@ function exportarSeleccionExcel(){
     'Texto breve','Marca','Subcategoría','Aplicación (marca vehículo)','Modelo','Rango de años original',
     'Años compatibles','Motor','Stock disponible','Cantidad requerida','Valor remate con IVA','Total estimado de línea','Observación'];
   const filas = lineas.map(l=>{
-    const tiendaNombre = l.tienda.includes('–') ? l.tienda.split('–')[1].trim() : l.tienda;
+    const tiendaNombre = nombreDeTienda(l.tienda);
     return [
       base ?? '', l.zona, codigoDeTienda(l.tienda), tiendaNombre, l.material, l.texto, l.marca, l.subcategoria,
       l.marcaVehiculo||'', l.modelo||'', l.anios||'', aniosAperturadosDeTexto(l.anios), l.motor||'',
@@ -1980,7 +1979,7 @@ function exportarSeleccionExcel(){
   for (const l of lineas){
     (porZona[l.zona] ??= {sku:0, unidades:0, total:0});
     porZona[l.zona].sku += 1; porZona[l.zona].unidades += l.cantidad; porZona[l.zona].total += totalLinea(l);
-    const claveTienda = `${codigoDeTienda(l.tienda)} · ${l.tienda.includes('–')?l.tienda.split('–')[1].trim():l.tienda}`;
+    const claveTienda = `${codigoDeTienda(l.tienda)} · ${nombreDeTienda(l.tienda)}`;
     (porTienda[claveTienda] ??= {sku:0, unidades:0, total:0});
     porTienda[claveTienda].sku += 1; porTienda[claveTienda].unidades += l.cantidad; porTienda[claveTienda].total += totalLinea(l);
     (porSubcat[l.subcategoria] ??= {sku:0, unidades:0, total:0});

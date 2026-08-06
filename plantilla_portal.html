@@ -1049,9 +1049,7 @@ function contenidoDetalle(f){
   return campos;
 }
 function tiendaCorta(f){
-  const t = D.tiendas[f[T]];
-  const i = t.indexOf('–');
-  return i>=0 ? t.slice(i+1).trim() : t;
+  return nombreDeTienda(D.tiendas[f[T]]);
 }
 function filaTablaHtml(f, mostrarSubcat, mostrarTienda, i){
   const agotado = f[ST] <= 0;
@@ -1355,7 +1353,7 @@ function seleccionarTopStock(filas, limite){
 function tarjetaDestacadoHtml(d, i){
   const activo = obtenerFavoritos().has(d.material);
   const descuento = d.descuentoPct != null ? `<span class="vr-descuento">-${d.descuentoPct}%</span>` : '';
-  const tiendaNombre = d.tienda.includes('–') ? d.tienda.split('–')[1].trim() : d.tienda;
+  const tiendaNombre = nombreDeTienda(d.tienda);
   return `<div class="vr-tarjeta" data-i="${i}" role="button" tabindex="0">
     <button class="vr-favorito" data-i="${i}" type="button" aria-label="Marcar como favorito" data-activo="${activo}">
       <img class="icono-tecnico" src="data:image/png;base64,__ICONO_FAVORITO__" alt="">
@@ -1524,6 +1522,11 @@ function codigoDeTienda(tiendaCompleta){
   const i = String(tiendaCompleta).indexOf('–');
   return i>=0 ? tiendaCompleta.slice(0,i).trim() : String(tiendaCompleta);
 }
+function nombreDeTienda(tiendaCompleta){
+  const t = String(tiendaCompleta);
+  const i = t.indexOf('–');
+  return i>=0 ? t.slice(i+1).trim() : t;
+}
 function idLinea(item){
   return `${item.material}|${codigoDeTienda(item.tienda)}|${item.zona}`;
 }
@@ -1661,10 +1664,6 @@ function stockActualDeLinea(linea){
   const f = buscarFilaActual(linea);
   return f ? f[ST] : null;
 }
-function precioActualDeLinea(linea){
-  const f = buscarFilaActual(linea);
-  return f ? f[VR] : null;
-}
 function cambiarCantidad(id, delta){
   const linea = SELECCION.lineas.find(l => l.id===id);
   if (!linea) return;
@@ -1773,7 +1772,7 @@ function lineaSeleccionHtml(linea){
   }
 
   const tiendaCodigo = codigoDeTienda(linea.tienda);
-  const tiendaNombre = linea.tienda.includes('–') ? linea.tienda.split('–')[1].trim() : linea.tienda;
+  const tiendaNombre = nombreDeTienda(linea.tienda);
   const total = totalLinea(linea);
   const obsAbierta = !!linea._obsAbierta;
 
@@ -1963,7 +1962,7 @@ function exportarSeleccionExcel(){
     'Texto breve','Marca','Subcategoría','Aplicación (marca vehículo)','Modelo','Rango de años original',
     'Años compatibles','Motor','Stock disponible','Cantidad requerida','Valor remate con IVA','Total estimado de línea','Observación'];
   const filas = lineas.map(l=>{
-    const tiendaNombre = l.tienda.includes('–') ? l.tienda.split('–')[1].trim() : l.tienda;
+    const tiendaNombre = nombreDeTienda(l.tienda);
     return [
       base ?? '', l.zona, codigoDeTienda(l.tienda), tiendaNombre, l.material, l.texto, l.marca, l.subcategoria,
       l.marcaVehiculo||'', l.modelo||'', l.anios||'', aniosAperturadosDeTexto(l.anios), l.motor||'',
@@ -1980,7 +1979,7 @@ function exportarSeleccionExcel(){
   for (const l of lineas){
     (porZona[l.zona] ??= {sku:0, unidades:0, total:0});
     porZona[l.zona].sku += 1; porZona[l.zona].unidades += l.cantidad; porZona[l.zona].total += totalLinea(l);
-    const claveTienda = `${codigoDeTienda(l.tienda)} · ${l.tienda.includes('–')?l.tienda.split('–')[1].trim():l.tienda}`;
+    const claveTienda = `${codigoDeTienda(l.tienda)} · ${nombreDeTienda(l.tienda)}`;
     (porTienda[claveTienda] ??= {sku:0, unidades:0, total:0});
     porTienda[claveTienda].sku += 1; porTienda[claveTienda].unidades += l.cantidad; porTienda[claveTienda].total += totalLinea(l);
     (porSubcat[l.subcategoria] ??= {sku:0, unidades:0, total:0});

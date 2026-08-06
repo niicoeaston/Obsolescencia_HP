@@ -724,3 +724,41 @@ el listado se mantuvo en 17.594 antes y después (ningún producto se perdió
 por el cruce ni por el fix de stock negativo).
 
 Archivo modificado: solo `portal-web/plantilla_portal.html`.
+
+## 14. Limpieza de código (sin cambios de funcionalidad)
+
+Pasada de limpieza pura sobre `plantilla_portal.html` y `generar_portal.py`,
+sin tocar ningún comportamiento visible. Verificado con un análisis
+automatizado (todas las clases CSS y funciones JS referenciadas al menos
+una vez fuera de su propia definición) y con una regresión completa por
+Playwright (filtros, Vista Rápida, panel de detalle, Lista de selección
+—agregar, cantidad, exportar a Excel—, badge "Agotado" y tema oscuro): sin
+errores de consola, sin diferencias de comportamiento.
+
+- **`nombreDeTienda(tiendaCompleta)`** (nueva función, junto a
+  `codigoDeTienda`): la lógica "sacar el nombre de tienda después del
+  guion (–)" estaba duplicada de forma independiente 5 veces
+  (`tiendaCorta`, `tarjetaDestacadoHtml`, `lineaSeleccionHtml` y dos veces
+  en `exportarSeleccionExcel`), con dos implementaciones ligeramente
+  distintas (`indexOf`+`slice` vs `includes`+`split`). Se unificó en una
+  sola función y las 5 quedaron reducidas a una llamada.
+- **`precioActualDeLinea(linea)`** (función eliminada): quedó sin ningún
+  llamador tras un refactor anterior; `lineaSeleccionHtml()` ya leía
+  `f[VR]` directamente.
+- **`generar_portal.py`**: se quitó un `re.sub()` que reescribía el regex
+  de `norm()` en el HTML de salida (buscaba reemplazar una clase de
+  caracteres Unicode literal por su forma escapada, tipo `\uXXXX-\uYYYY`).
+  Comparado contra el archivo real, el patrón ya no coincidía con nada —
+  la plantilla ya trae directamente la forma escapada — así que era una
+  sustitución inerte desde hace tiempo; quitarla no cambia el HTML
+  generado (verificado byte a byte). También se quitaron del diccionario
+  `ASSETS_VISUALES` tres entradas (`__ICONO_TEMA__`,
+  `__ICONO_AMORTIGUADOR__`, `__ICONO_FILTRO_AIRE__`) cuyos marcadores no
+  existen en la plantilla: cada build leía y codificaba en base64 esos
+  tres archivos de ícono sin que el resultado se usara en ningún lado.
+- Un análisis de todos los selectores CSS del archivo no encontró ninguna
+  clase sin uso (el único "hallazgo" fue un falso positivo: la cadena
+  "autoplanet.cl" dentro de un comentario).
+
+Confirmado: `index.html` generado después de la limpieza tiene el mismo
+conteo de productos (17.594) y el mismo tamaño (1.57 MB) que antes.
