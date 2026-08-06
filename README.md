@@ -29,6 +29,7 @@ filtros son para acotar, no para desbloquear resultados.
 | `logo_autoplanet_b64.txt` | Logo real de Autoplanet en base64 (header). |
 | `banner_hero_b64.txt` | Banner de Talleres Autoplanet en base64, re-comprimido a JPEG (ya no se usa como fondo del hero desde el rediseño "north star", ver sección 10, pero se deja por si se necesita). |
 | `assets_src/` | Ilustración del hero e íconos del rediseño visual (PNG con fondo transparente), y el script que los recorta desde las referencias del usuario. Ver sección 10. |
+| `lib/xlsx.full.min.js` | Librería SheetJS (MIT, v0.18.5) vendorizada para generar el Excel de "Mi selección" en el navegador, sin backend. Ver sección 11. |
 
 El proyecto reutiliza el procesador de datos ya construido y probado en
 `../dashboard-obsolescencia/src/services/cargador_excel.py` (limpieza,
@@ -378,3 +379,247 @@ apertura de años, la tabla/tarjetas de resultados con "Ver detalle", la
 descarga CSV y el pipeline de generación/publicación siguen exactamente
 igual — solo se les actualizó el estilo visual (íconos junto a las
 etiquetas, botón de descarga, "Limpiar filtros").
+
+---
+
+## 11. "Lista de selección" ("Mi selección")
+
+Herramienta de trabajo interna para que un supervisor arme un listado de
+SKU antes de solicitar una revisión o traslado. **No es un carrito, no
+reserva stock, no modifica datos fuente ni el análisis** — vive solo en
+`localStorage` del navegador, como pidió el usuario explícitamente. Primera
+etapa: sin login, sin aprobaciones, sin checkout (ver el pedido original si
+se retoma esto en una segunda etapa).
+
+### Cambio de categorías en Vista Rápida
+
+La imagen de referencia (`referencia_visual_final_lista_seleccion.png`)
+muestra Vista Rápida con **Kit de embrague, Disco de freno, Pastillas de
+freno, Faro delantero y Bujía de encendido** — dos categorías distintas a
+las que se habían acordado en la ronda de rediseño anterior (que incluía
+Amortiguador y Filtro de Aire). Como la imagen reemplaza cualquier diseño
+previo por instrucción explícita, se actualizó `CATEGORIAS_DESTACADAS` en
+`plantilla_portal.html` a estas 5. "Faro delantero" mapea a las 4
+subcategorías reales que representan lo mismo en la base (`FAROL
+DERECHO/IZQUIERDO`, `OPTICO DERECHO/IZQUIERDO`); "Pastillas de freno" a
+`PASTILLA DE FRENO DELANTERO/TRASERO`. Los 2 íconos que faltaban (pastillas
+de freno, faro) se recortaron de la misma hoja de referencia ya usada
+antes — nada generado con IA.
+
+### Adaptación visual señalada (sección 5 del pedido)
+
+La referencia muestra cada línea de la selección como una fila de tabla
+con 7 columnas fijas (Material/Descripción·SKU, Tienda·Zona, Cantidad,
+Stock, Precio, Total, Observación). A los anchos reales de un drawer
+(~420–560px en escritorio, 100% en móvil), una tabla literal de 7 columnas
+se vuelve ilegible o fuerza scroll horizontal. Se implementó cada línea
+como una **tarjeta compacta de 2 filas** que muestra exactamente los mismos
+datos (ícono, nombre/SKU, tienda/zona con chip de color, cantidad,
+stock, precio, total, observación, eliminar), reorganizados para que quepan
+sin comprimir texto ni scroll horizontal. La intención visual (jerarquía,
+colores, chips de zona, total en rojo) se mantiene igual a la referencia.
+
+### Arquitectura
+
+- **Estado**: `SELECCION = {lineas: [...]}`, un array de líneas en memoria,
+  persistido completo en `localStorage['ap-seleccion-v1']` en cada cambio.
+- **ID único de línea**: `material + código de tienda + zona` (sección 16
+  del pedido) — el mismo SKU en tiendas distintas queda en líneas separadas;
+  agregar el mismo registro dos veces incrementa la cantidad existente en
+  vez de duplicar la línea.
+- **Captura de precio/stock**: al agregar, se guarda el stock y precio
+  *de ese momento* (`stockCapturado`, `precioCapturado`). El total de línea
+  siempre usa el precio capturado (no cambia solo si el precio cambió en la
+  base) — el `precio actual` se lee en vivo desde `D.filas` solo para
+  comparar y advertir, nunca para sobrescribir silenciosamente.
+- **Reglas de compatibilidad de zona**: `categoriaZona()` mapea las 11
+  zonas reales de la base a las categorías de la matriz pedida (RM1/RM2/
+  RM3/Norte/Sur/Ecommerce/CD). Las zonas reales que la matriz no menciona
+  (*Zona V Region, Zona Centro Sur, Agroplanet, AP/SG*) caen en la regla
+  "cualquier otra zona solo se combina consigo misma". La zona base es la
+  primera línea que **no** sea Ecommerce/CD; si la selección arranca con
+  Ecommerce y/o CD, la zona base queda "pendiente" hasta que se agregue la
+  primera RM, que la fija de forma permanente (sección 20 del pedido).
+  Toda la lógica vive en `validarCompatibilidadZona()`.
+- **Excel**: se genera 100% en el navegador con **SheetJS** (vendorizada en
+  `lib/xlsx.full.min.js`, cargada con un `<script src>` normal — no un CDN,
+  la sirve GitHub Pages igual que cualquier archivo del repo). Dos hojas:
+  "Selección" (una fila por línea + fila de totales) y "Resumen" (totales
+  generales + desglose por zona/tienda/subcategoría).
+
+### Limitación real de la librería de Excel
+
+SheetJS Community Edition (la gratuita, MIT) **no escribe estilos de celda
+completos** en la versión vendorizada aquí (colores de fondo/negrita en
+encabezados es una función de la edición Pro). Se implementó lo que sí es
+nativo de la edición gratuita: **autofiltro en los encabezados** y **anchos
+de columna ajustados**. Los encabezados no salen en negrita — es una
+limitación de la librería, no un pendiente de implementación.
+
+### Reglas de cantidad y stock
+
+El tope de cada línea es el **stock actual en vivo** (no el capturado) —
+si el stock bajó desde que se agregó, no se puede subir la cantidad más
+allá del nuevo tope, pero **la cantidad ya guardada no se recorta sola**
+(sección 29 del pedido): se muestra tal cual con una advertencia, y el
+usuario decide si la ajusta.
+
+### Qué se guarda y qué se detecta al recargar
+
+`localStorage` guarda cada línea completa (SKU, tienda, zona, cantidades,
+observación, precio/stock capturados). Al cargar la página,
+`revisarSeleccionAlCargar()` compara cada línea contra `D.filas` actual y
+avisa (toast) si algún producto ya no existe en la base o si cambió de
+stock/precio — sin corregir nada solo.
+
+### Pruebas realizadas
+
+Se automatizaron y verificaron (no solo visualmente, revisando el estado
+real): agregar mismo registro dos veces → incrementa, no duplica; mismo
+SKU en tiendas distintas → líneas separadas; RM1 + Ecommerce + CD →
+permitido; RM1 + RM2 → bloqueado con el mensaje exacto pedido; Norte + Sur
+→ bloqueado; iniciar con Ecommerce + CD, fijar base con RM2, intentar RM1
+después → bloqueado; cantidad no puede superar el stock (clamps con
+mensaje); observación se abre/edita/guarda; eliminar línea actualiza
+contador y totales; `localStorage` persiste tras recargar la página;
+exportación a Excel con las 2 hojas y datos numéricos reales (verificado
+abriendo el `.xlsx` generado con `openpyxl`); responsive en escritorio,
+tablet y 390px sin scroll horizontal; tema oscuro (chips de zona con
+variante oscura propia, no solo invertida); Escape cierra el drawer y el
+modal de confirmación de "Vaciar selección".
+
+### Instrucciones de publicación
+
+Sin cambios respecto a lo ya documentado (sección 2) — mismo `git push` a
+los dos remotos. Lo único nuevo es que ahora hay que agregar también
+`portal-web/lib/xlsx.full.min.js` al commit (una sola vez; no cambia salvo
+que se actualice la versión de la librería).
+
+---
+
+## 12. Correcciones puntuales (línea separadora + Vista Rápida dinámica)
+
+### Línea separadora de la tabla de resultados
+
+**Causa identificada**: la última celda de cada fila (`<td class="der
+acciones-fila">`, con los botones "Agregar" y "Ver detalle") tenía
+`display:flex` aplicado **directamente sobre el `<td>`**. Un `<td>` con
+`display:flex` deja de estirarse a la altura real de la fila (que el
+layout de tabla sí le exige a las demás celdas) y en cambio se ajusta a la
+altura de su contenido — los botones, más bajos que el texto envuelto en
+otras columnas. El resultado: el `border-bottom` de esa celda quedaba
+~10-14px más arriba que el de las demás celdas de la misma fila, generando
+el "escalón" reportado.
+
+Confirmado **midiendo el DOM real** (`getBoundingClientRect()` de cada
+`<td>` de una misma fila), no solo a ojo: antes del fix, la celda de
+acciones media 60.67px de alto contra 74.25px del resto de la fila en la
+misma `<tr>`; después del fix, las 8 celdas de cada fila miden exactamente
+lo mismo y su `border-bottom` cae en el mismo píxel.
+
+**Corrección**: se movió `display:flex` del `<td>` a un `<div
+class="acciones-fila">` **dentro** del `<td>` (`plantilla_portal.html`,
+función `filaTablaHtml()`). El `<td>` vuelve a comportarse como celda de
+tabla normal (hereda `vertical-align:middle` de la regla base `tbody td`)
+y el `div` interno sigue centrando los dos botones con flexbox. Se
+verificó que abrir/cerrar "Ver detalle" no altera la altura de la fila
+principal (mismo alto antes/durante/después de expandir), y que el fix se
+sostiene en escritorio y tablet (768px, con el botón compactado).
+
+### Vista Rápida: de fija a 100% dinámica
+
+**Antes**: `calcularDestacados()` tenía una lista fija de 5 categorías
+(Kit de Embrague, Disco de Freno, Pastillas de Freno, Faro Delantero,
+Bujía) con sus subcategorías asociadas, y filtraba **solo por Zona**,
+ignorando Tienda/Subcategoría/Marca/Modelo/Año/búsqueda. Era, tal como se
+describió, una segunda lógica de filtrado paralela a `filtrar()`.
+
+**Ahora**: `render()` calcula `filtrar()` **una sola vez** y ese mismo
+array (`filas`) se pasa tanto a `pintarResultados()` (tabla/tarjetas
+principales) como a `pintarVistaRapida(filas)` — una única fuente de
+verdad, sin lógica de filtrado duplicada.
+
+**Función usada para el top por stock** — `seleccionarTopStock(filas,
+limite)`:
+1. Excluye registros con stock nulo, no numérico, negativo o cero
+   (`Number.isFinite(f[ST]) && f[ST] > 0`).
+2. Ordena una **copia** del array (`.slice().sort(...)`, nunca muta
+   `filas` ni `D.filas`) de mayor a menor stock.
+3. Desempate estable y predecible: stock descendente → material ascendente
+   → código de tienda ascendente (nunca aleatorio).
+4. Deduplica por el mismo identificador que usa la Lista de selección
+   (`material + código de tienda + zona`, función `idLinea()`).
+5. Devuelve los primeros `limite` (5) — sin forzar variedad de
+   subcategoría: si los 5 productos con más stock son de la misma
+   subcategoría, se muestran los 5.
+
+Ya no hay ningún listado hardcodeado ni SKU de ejemplo — los íconos de
+categoría (`ICONO_SUBCAT_MAPA`) se conservan solo como *estética* (mapean
+~9 subcategorías reales a un ícono dedicado), con un ícono genérico de
+respaldo para las otras ~169 subcategorías de la base.
+
+**Reactividad**: como `pintarVistaRapida()` ahora se llama dentro de
+`render()` con el resultado fresco de `filtrar()`, se actualiza
+automáticamente ante cualquier cambio de Zona/Tienda/Subcategoría/Marca/
+Modelo/Año/búsqueda — sin recargar la página ni acciones adicionales.
+
+**Estado vacío**: si el filtro activo no deja ningún producto con stock
+válido, se muestra "No encontramos productos disponibles para los filtros
+seleccionados. Prueba modificando o limpiando algunos filtros." en vez de
+tarjetas vacías o de volver a un contenido fijo.
+
+**Validación de desarrollo** (sección 19 del pedido): `seleccionarTopStock`
+y `pintarVistaRapida` tienen `console.debug` (resultados filtrados, top por
+stock con su ID, registros excluidos por stock inválido, filtros activos)
+detrás de la constante `MOSTRAR_DEBUG_VISTA_RAPIDA` — **queda en `false`**
+en este commit; se puede poner en `true` temporalmente para depurar.
+
+### Supuestos aplicados
+
+- La cantidad de tarjetas visibles se mantuvo en 5 (la ya aprobada en el
+  rediseño visual), tanto en escritorio como en móvil.
+- El ícono por categoría (`ICONO_SUBCAT_MAPA`) se conserva únicamente como
+  mejora visual para las ~9 subcategorías con ilustración dedicada — no
+  como criterio de selección de productos. **Nota**: esta parte quedó
+  obsoleta con el ajuste de la sección siguiente, que quitó el ícono de
+  las tarjetas de Vista Rápida.
+- El texto de contexto de Vista Rápida ("Los productos con más stock
+  en…") ahora lista todos los filtros activos (no solo Zona), separados
+  por "·", igual que el resumen de resultados principales.
+
+### Archivos modificados
+
+Solo `portal-web/plantilla_portal.html` (CSS y JS). No se tocó
+`generar_portal.py`, el pipeline de datos, ni ningún archivo fuente.
+
+### Ajuste posterior: tarjetas de Vista Rápida sin ícono
+
+El usuario notó que, al mostrar el ícono dedicado solo en ~9 de las ~178
+subcategorías reales, la mayoría de las tarjetas caían al ícono genérico
+(un cuadro/portafolio) mientras unas pocas mostraban una ilustración de
+línea real — inconsistencia visual entre tarjetas. Pedido: quitar la
+imagen por completo y dejar únicamente el cuadro con texto, para todas
+las tarjetas por igual.
+
+**Cambio**: en `tarjetaDestacadoHtml(d, i)` se eliminó el `<div
+class="vr-icono">${icono}</div>` (y el cálculo de `icono` que ya no se
+usaba en esa función). La tarjeta ahora empieza directamente en el
+nombre del producto, seguida de código+marca, tienda/zona, precio y
+stock — igual para todas, sin importar si la subcategoría tenía o no un
+ícono dedicado.
+
+`iconoHtmlParaSubcategoria()` **no se tocó**: sigue usándose en el panel
+de detalle (`abrirPanelDestacado`, `.panel-icono`) y en cada línea de la
+Lista de selección (`.ms-linea-icono`), ninguno de los dos alcanzados por
+este pedido (que se limitó explícitamente a "los productos de la vista
+previa", es decir, las tarjetas de Vista Rápida).
+
+Se ajustó también la regla CSS `.vr-nombre` (se le agregó
+`padding-right:26px`) para que el título nunca quede debajo del botón de
+favorito (⭐, posicionado `absolute` arriba a la derecha de la tarjeta)
+ahora que no hay ícono que empuje el texto hacia abajo. Verificado con
+Playwright en tema claro y oscuro, y en ancho móvil (390px): las 8+
+tarjetas probadas quedan uniformes, sin superposición del título con el
+botón de favorito y sin huecos donde antes iba el ícono.
+
+Archivo modificado: solo `portal-web/plantilla_portal.html`.

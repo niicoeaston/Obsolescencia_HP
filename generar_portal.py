@@ -63,6 +63,8 @@ ASSETS_VISUALES = {
     "__ICONO_TEMA__": "icono_tema.png",
     "__ICONO_KIT_EMBRAGUE__": "icono_kit_embrague.png",
     "__ICONO_DISCO_FRENO__": "icono_disco_freno.png",
+    "__ICONO_PASTILLAS_FRENO__": "icono_pastillas_freno.png",
+    "__ICONO_FARO__": "icono_faro.png",
     "__ICONO_BUJIA__": "icono_bujia.png",
     "__ICONO_AMORTIGUADOR__": "icono_amortiguador.png",
     "__ICONO_FILTRO_AIRE__": "icono_filtro_aire.png",
@@ -75,11 +77,11 @@ ASSETS_VISUALES = {
 # Esta lista queda aqui solo como referencia de que subcategorias respaldan
 # cada icono, para no perder la trazabilidad si se agrega uno nuevo.
 CATEGORIAS_DESTACADAS_REFERENCIA = [
-    ("Kit de Embrague", ["KIT DE EMBRAGUE"], "icono_kit_embrague"),
-    ("Disco de Freno", ["DISCO DE FRENO DELANTERO", "DISCO DE FRENO TRASERO"], "icono_disco_freno"),
-    ("Bujía", ["BUJIA INCANDESCENTE"], "icono_bujia"),
-    ("Amortiguador", ["AMORTIGUADOR DELANTERO", "AMORTIGUADOR TRASERO"], "icono_amortiguador"),
-    ("Filtro de Aire", ["FILTRO DE AIRE"], "icono_filtro_aire"),
+    ("Kit de embrague", ["KIT DE EMBRAGUE"], "icono_kit_embrague"),
+    ("Disco de freno", ["DISCO DE FRENO DELANTERO", "DISCO DE FRENO TRASERO"], "icono_disco_freno"),
+    ("Pastillas de freno", ["PASTILLA DE FRENO DELANTERO", "PASTILLA DE FRENO TRASERO"], "icono_pastillas_freno"),
+    ("Faro delantero", ["FAROL DERECHO", "FAROL IZQUIERDO", "OPTICO DERECHO", "OPTICO IZQUIERDO"], "icono_faro"),
+    ("Bujía de encendido", ["BUJIA INCANDESCENTE"], "icono_bujia"),
 ]
 
 # Orden en que se ofrecen las zonas en el selector: geograficas de norte a

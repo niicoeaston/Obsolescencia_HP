@@ -81,6 +81,8 @@ def main():
     print("Repuestos (hoja de linea tecnica):")
     recorta_celda(hoja_repuestos, caja_repuesto(1, 1), "icono_kit_embrague")
     recorta_celda(hoja_repuestos, caja_repuesto(1, 2), "icono_disco_freno")
+    recorta_celda(hoja_repuestos, caja_repuesto(1, 3), "icono_pastillas_freno")
+    recorta_celda(hoja_repuestos, caja_repuesto(1, 4), "icono_faro")
     recorta_celda(hoja_repuestos, caja_repuesto(2, 2), "icono_bujia")
     recorta_celda(hoja_repuestos, caja_repuesto(2, 3), "icono_amortiguador")
     recorta_celda(hoja_repuestos, caja_repuesto(2, 4), "icono_filtro_aire")
