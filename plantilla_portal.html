@@ -774,7 +774,7 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
             <label for="fBuscar">Buscar producto</label>
             <div class="buscador-wrap">
               <img class="icono-tecnico" src="data:image/png;base64,__ICONO_BUSCAR__" alt="">
-              <input type="search" id="fBuscar" placeholder="Ingresa nombre, código, marca, modelo o año…" disabled autocomplete="off">
+              <input type="search" id="fBuscar" placeholder="Ingresa nombre, código, código de fabricante, marca, modelo o año…" disabled autocomplete="off">
             </div>
           </div>
           <button class="link-limpiar" id="btnLimpiar" type="button">
@@ -908,13 +908,14 @@ const norm = s => String(s??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/
 const TODAS = '— Todas —';
 const $ = id => document.getElementById(id);
 
-/* columnas de cada fila: Z,T,M,X,MA,MV,CA,SC,MO,MT,AN,ST,PN,VR */
-const Z=0,T=1,M=2,X=3,MA=4,MV=5,CA=6,SC=7,MO=8,MT=9,AN=10,ST=11,PN=12,VR=13;
+/* columnas de cada fila: Z,T,M,X,MA,MV,CA,SC,MO,MT,AN,ST,PN,VR,CF */
+const Z=0,T=1,M=2,X=3,MA=4,MV=5,CA=6,SC=7,MO=8,MT=9,AN=10,ST=11,PN=12,VR=13,CF=14;
 
 const busqueda = D.filas.map(f => norm([
   D.materiales[f[M]], D.textos[f[X]], D.marcas[f[MA]], D.subcats[f[SC]],
   D.categorias[f[CA]], f[MV]>=0?D.marcasVehiculo[f[MV]]:'',
-  f[MO]>=0?D.modelos[f[MO]]:'', f[MT]>=0?D.motores[f[MT]]:'', f[AN]>=0?D.anios[f[AN]]:''
+  f[MO]>=0?D.modelos[f[MO]]:'', f[MT]>=0?D.motores[f[MT]]:'', f[AN]>=0?D.anios[f[AN]]:'',
+  f[CF]>=0?D.codigosFabricante[f[CF]]:''
 ].join(' ')));
 
 /* anio seleccionado (numero) por fila -> se resuelve via D.aniosPorIndice[f[AN]] */
@@ -1036,16 +1037,19 @@ function ordenar(filas){
 /* Contenido del "Ver detalle": el mismo en escritorio y en movil. */
 function contenidoDetalle(f){
   const campos = [];
-  if (f[MV]>=0) campos.push(['Marca del vehículo', esc(D.marcasVehiculo[f[MV]])]);
-  if (f[MO]>=0) campos.push(['Modelo', esc(D.modelos[f[MO]])]);
-  if (f[MT]>=0) campos.push(['Motor', esc(D.motores[f[MT]])]);
+  if (f[CF]>=0) campos.push(['Código de fabricante', esc(D.codigosFabricante[f[CF]])]);
+  const camposApp = [];
+  if (f[MV]>=0) camposApp.push(['Marca del vehículo', esc(D.marcasVehiculo[f[MV]])]);
+  if (f[MO]>=0) camposApp.push(['Modelo', esc(D.modelos[f[MO]])]);
+  if (f[MT]>=0) camposApp.push(['Motor', esc(D.motores[f[MT]])]);
   if (f[AN]>=0){
-    campos.push(['Años de aplicación (original)', esc(D.anios[f[AN]])]);
+    camposApp.push(['Años de aplicación (original)', esc(D.anios[f[AN]])]);
     const ap = aniosDeFila(f);
-    if (ap.length>1) campos.push(['Años aperturados', ap.join(', ')]);
+    if (ap.length>1) camposApp.push(['Años aperturados', ap.join(', ')]);
   }
-  if (estado.anio) campos.push(['Compatible con el año seleccionado', esc(estado.anio)]);
-  if (!campos.length) campos.push(['Aplicación vehicular', 'Información no disponible']);
+  if (estado.anio) camposApp.push(['Compatible con el año seleccionado', esc(estado.anio)]);
+  if (!camposApp.length) camposApp.push(['Aplicación vehicular', 'Información no disponible']);
+  campos.push(...camposApp);
   return campos;
 }
 function tiendaCorta(f){
@@ -1265,12 +1269,12 @@ $('btnMasFiltros').addEventListener('click', ()=>{
 
 /* ---------------- descarga CSV ---------------- */
 $('btnDescargar').addEventListener('click', ()=>{
-  const cab = ['Zona','Tienda','Material','Texto breve','Marca','Categoría','Subcategoría',
+  const cab = ['Zona','Tienda','Material','Código fabricante','Texto breve','Marca','Categoría','Subcategoría',
                'Marca vehículo','Modelo','Motor','Rango de años original','Años aperturados',
                'Stock disponible','Precio normal','Precio Liquidación'];
   const filas = FILTRADAS.map(f=>{
     const aniosAp = aniosDeFila(f).join(', ');
-    const fila = [D.zonas[f[Z]], D.tiendas[f[T]], D.materiales[f[M]], D.textos[f[X]], D.marcas[f[MA]],
+    const fila = [D.zonas[f[Z]], D.tiendas[f[T]], D.materiales[f[M]], f[CF]>=0?D.codigosFabricante[f[CF]]:'', D.textos[f[X]], D.marcas[f[MA]],
       D.categorias[f[CA]], D.subcats[f[SC]],
       f[MV]>=0?D.marcasVehiculo[f[MV]]:'', f[MO]>=0?D.modelos[f[MO]]:'', f[MT]>=0?D.motores[f[MT]]:'',
       f[AN]>=0?D.anios[f[AN]]:'', aniosAp,
@@ -1420,6 +1424,7 @@ $('vrSiguiente').addEventListener('click', ()=>{
 function abrirPanelDestacado(d){
   const icono = iconoHtmlParaSubcategoria(d.subcategoria);
   const campos = [];
+  if (d.codigoFabricante) campos.push(['Código de fabricante', esc(d.codigoFabricante)]);
   if (d.marcaVehiculo) campos.push(['Marca del vehículo', esc(d.marcaVehiculo)]);
   if (d.modelo) campos.push(['Modelo', esc(d.modelo)]);
   if (d.motor) campos.push(['Motor', esc(d.motor)]);
@@ -1544,6 +1549,7 @@ function filaAItem(f){
   return {
     material: D.materiales[f[M]], texto: D.textos[f[X]], marca: D.marcas[f[MA]],
     subcategoria: D.subcats[f[SC]],
+    codigoFabricante: f[CF]>=0 ? D.codigosFabricante[f[CF]] : null,
     marcaVehiculo: f[MV]>=0 ? D.marcasVehiculo[f[MV]] : null,
     modelo: f[MO]>=0 ? D.modelos[f[MO]] : null,
     motor: f[MT]>=0 ? D.motores[f[MT]] : null,

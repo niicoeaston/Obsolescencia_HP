@@ -174,7 +174,8 @@ def main() -> int:
             if (df["marca_vehiculo"].astype(str).str.strip() == "0").sum()
             else f"{n_marca_veh} productos sin marca del vehiculo (quedan igual, solo sin ese dato)."
         )
-    for etiqueta, col in [("modelo", "app_modelo"), ("motor", "app_motor")]:
+    for etiqueta, col in [("modelo", "app_modelo"), ("motor", "app_motor"),
+                         ("código de fabricante", "codigo_fabricante")]:
         n = _vacios(col)
         if n:
             advertencias_generales.append(f"{n} productos sin {etiqueta} (quedan igual, solo sin ese dato).")
@@ -182,6 +183,7 @@ def main() -> int:
     # --- Diccionarios de texto --------------------------------------------
     d_zona, d_tienda, d_mat, d_texto, d_marca = (Diccionario() for _ in range(5))
     d_marca_veh, d_cat, d_subcat, d_modelo, d_motor, d_anio = (Diccionario() for _ in range(6))
+    d_cod_fab = Diccionario()
 
     filas = []
     for fila in df.itertuples(index=False):
@@ -200,6 +202,7 @@ def main() -> int:
             limpio(fila.stock),
             limpio(getattr(fila, "precio_normal", None)),
             limpio(fila.valor_remate),
+            idx_opcional(d_cod_fab, getattr(fila, "codigo_fabricante", None)),
         ])
 
     # --- Apertura de anios (SOLO para filtrar/buscar; ver anios.py) --------
@@ -259,6 +262,7 @@ def main() -> int:
         "motores": d_motor.lista,
         "anios": d_anio.lista,
         "aniosPorIndice": anios_por_indice,
+        "codigosFabricante": d_cod_fab.lista,
         "filas": filas,
         "info": {
             "archivo": resultado.archivo.name,
