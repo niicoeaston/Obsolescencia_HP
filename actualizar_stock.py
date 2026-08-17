@@ -15,6 +15,12 @@ Reglas de negocio (confirmadas con el usuario el 2026-08-06):
   y aplicacion vehicular) y se reportan aparte para revision manual.
 - Los productos que quedan en stock 0 NO se eliminan del listado: el portal
   los muestra marcados como "Agotado" (ver plantilla_portal.html).
+- El stock NUNCA sube ni se "recupera" solo (confirmado con el usuario el
+  2026-08-17, tras un problema causado por productos que volvieron a
+  aparecer con stock): son productos en liquidacion, asi que solo se
+  aplican bajas (incluido llegar a 0 = Agotado). Si el archivo diario trae
+  mas stock que el maestro para una clave, se ignora esa fila y se reporta
+  aparte en vez de aplicarse.
 
 El cruce Centro/Almacen -> Zona/Tienda se hace por nombre: la columna
 "Nombre 1" del archivo diario trae exactamente la misma etiqueta de tienda
@@ -92,10 +98,9 @@ class ResultadoActualizacion:
     tiendas_cubiertas: int = 0
     tiendas_ausentes: list = field(default_factory=list)
     productos_actualizados: int = 0
-    productos_subieron: list = field(default_factory=list)
     productos_bajaron: list = field(default_factory=list)
     productos_agotados_nuevos: list = field(default_factory=list)
-    productos_recuperados: list = field(default_factory=list)
+    productos_subida_ignorada: list = field(default_factory=list)
     productos_nuevos_ignorados: list = field(default_factory=list)
     respaldo: Path | None = None
 
@@ -187,16 +192,16 @@ def actualizar(fecha: date | None = None, guardar: bool = True) -> ResultadoActu
         anterior = fila[idx_stock].value or 0
         if nuevo == anterior:
             continue
+        if nuevo > anterior:
+            # Regla de negocio: el stock nunca sube ni se recupera solo.
+            resultado.productos_subida_ignorada.append((tienda, material, anterior, nuevo))
+            continue
 
         fila[idx_stock].value = nuevo
         resultado.productos_actualizados += 1
         registro = (tienda, material, anterior, nuevo)
-        if anterior == 0 and nuevo > 0:
-            resultado.productos_recuperados.append(registro)
-        elif anterior > 0 and nuevo == 0:
+        if nuevo == 0:
             resultado.productos_agotados_nuevos.append(registro)
-        elif nuevo > anterior:
-            resultado.productos_subieron.append(registro)
         else:
             resultado.productos_bajaron.append(registro)
 
@@ -228,14 +233,13 @@ def imprimir_reporte(r: ResultadoActualizacion) -> None:
     for t in r.tiendas_ausentes:
         print(f"    - {t}")
     print(f"Productos actualizados: {r.productos_actualizados}")
-    print(f"  Subieron de stock: {len(r.productos_subieron)}")
     print(f"  Bajaron de stock: {len(r.productos_bajaron)}")
     print(f"  Pasaron a Agotado (de >0 a 0): {len(r.productos_agotados_nuevos)}")
     for t, m, a, n in r.productos_agotados_nuevos[:MAX_EJEMPLOS_REPORTE]:
         print(f"    - {m} en {t}: {a} -> {n}")
-    print(f"  Volvieron a tener stock (de 0 a >0): {len(r.productos_recuperados)}")
-    for t, m, a, n in r.productos_recuperados[:MAX_EJEMPLOS_REPORTE]:
-        print(f"    - {m} en {t}: {a} -> {n}")
+    print(f"Subidas de stock ignoradas (regla: el stock no se recupera solo): {len(r.productos_subida_ignorada)}")
+    for t, m, a, n in r.productos_subida_ignorada[:MAX_EJEMPLOS_REPORTE]:
+        print(f"    - {m} en {t}: {a} -> {n} (se mantiene en {a})")
     print(f"Productos del archivo de hoy ignorados (no estaban en el listado): {len(r.productos_nuevos_ignorados)}")
     for t, m, texto, cant in r.productos_nuevos_ignorados[:MAX_EJEMPLOS_REPORTE]:
         print(f"    - {m} ({texto}) en {t}: stock hoy {cant}")
