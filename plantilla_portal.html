@@ -503,6 +503,10 @@ td.precio{text-align:right;white-space:nowrap}
   display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;
   color:var(--rojo);background:var(--naranja-suave);border-radius:999px;padding:3px 9px;
 }
+.vr-badge-nuevo{
+  display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;
+  color:var(--naranja);background:var(--naranja-suave);border-radius:999px;padding:3px 9px;margin-bottom:8px;
+}
 .vr-agregar{
   appearance:none;width:100%;margin-top:10px;background:var(--superficie);border:1.5px solid var(--rojo);
   color:var(--rojo);border-radius:var(--radio-chico);min-height:38px;font-size:12.5px;font-weight:700;
@@ -909,7 +913,7 @@ const TODAS = '— Todas —';
 const $ = id => document.getElementById(id);
 
 /* columnas de cada fila: Z,T,M,X,MA,MV,CA,SC,MO,MT,AN,ST,PN,VR,CF */
-const Z=0,T=1,M=2,X=3,MA=4,MV=5,CA=6,SC=7,MO=8,MT=9,AN=10,ST=11,PN=12,VR=13,CF=14;
+const Z=0,T=1,M=2,X=3,MA=4,MV=5,CA=6,SC=7,MO=8,MT=9,AN=10,ST=11,PN=12,VR=13,CF=14,NV=15;
 
 const busqueda = D.filas.map(f => norm([
   D.materiales[f[M]], D.textos[f[X]], D.marcas[f[MA]], D.subcats[f[SC]],
@@ -1314,10 +1318,13 @@ const MOSTRAR_DEBUG_VISTA_RAPIDA = false;
 
 /* Texto de contexto de Vista Rápida: describe TODOS los filtros activos
    (no solo Zona), para que el usuario entienda qué esta viendo. */
-function textoContextoVistaRapida(){
+function textoContextoVistaRapida(nuevosCount){
   const partes = [estado.zona, estado.tienda, estado.subcat, estado.marcaVeh, estado.modelo,
                   estado.anio ? ('Año ' + estado.anio) : '', estado.q ? `"${estado.q}"` : ''].filter(Boolean);
-  return partes.length ? `Los productos con más stock en ${partes.join(' · ')}` : 'Los productos con más stock a nivel nacional';
+  const base = partes.length ? `Los productos con más stock en ${partes.join(' · ')}` : 'Los productos con más stock a nivel nacional';
+  if (!nuevosCount) return base;
+  const plural = nuevosCount === 1 ? 'producto nuevo' : 'productos nuevos';
+  return `${nuevosCount} ${plural} en Centro de Distribución (disponibles para todas las zonas) + ${base.charAt(0).toLowerCase()}${base.slice(1)}`;
 }
 
 /* Selecciona los N productos con mayor stock DENTRO del mismo array ya
@@ -1354,6 +1361,32 @@ function seleccionarTopStock(filas, limite){
   return top;
 }
 
+/* Productos marcados como "nuevo" (f[NV]===1, ver generar_portal.py):
+   se buscan en TODO D.filas, ignorando Zona/Tienda a proposito (llegan por
+   CD, que abastece pedidos de cualquier tienda del pais) -- pero sí
+   respetan Subcategoria/Marca vehiculo/Modelo/Año/busqueda, para no
+   mostrar un parachoque si el usuario esta buscando otra cosa. */
+function filtrarProductosNuevos(){
+  const si = estado.subcat ? D.subcats.indexOf(estado.subcat) : -1;
+  const mvi = estado.marcaVeh ? D.marcasVehiculo.indexOf(estado.marcaVeh) : -1;
+  const moi = estado.modelo ? D.modelos.indexOf(estado.modelo) : -1;
+  const anioSel = estado.anio ? +estado.anio : null;
+  const toks = estado.q ? norm(estado.q).split(/\s+/).filter(Boolean) : null;
+  const out = [];
+  for (let i=0;i<D.filas.length;i++){
+    const f = D.filas[i];
+    if (f[NV]!==1) continue;
+    if (!(Number.isFinite(f[ST]) && f[ST] > 0)) continue;
+    if (si>=0 && f[SC]!==si) continue;
+    if (mvi>=0 && f[MV]!==mvi) continue;
+    if (moi>=0 && f[MO]!==moi) continue;
+    if (anioSel!==null && !aniosDeFila(f).includes(anioSel)) continue;
+    if (toks){ const s=busqueda[i]; let ok=true; for(const t of toks){ if(!s.includes(t)){ok=false;break;} } if(!ok) continue; }
+    out.push(f);
+  }
+  return out.map(filaAItem).sort((a,b)=> a.material < b.material ? -1 : (a.material > b.material ? 1 : 0));
+}
+
 function tarjetaDestacadoHtml(d, i){
   const activo = obtenerFavoritos().has(d.material);
   const descuento = d.descuentoPct != null ? `<span class="vr-descuento">-${d.descuentoPct}%</span>` : '';
@@ -1362,6 +1395,7 @@ function tarjetaDestacadoHtml(d, i){
     <button class="vr-favorito" data-i="${i}" type="button" aria-label="Marcar como favorito" data-activo="${activo}">
       <img class="icono-tecnico" src="data:image/png;base64,__ICONO_FAVORITO__" alt="">
     </button>
+    ${d.nuevo ? '<div><span class="vr-badge-nuevo">Nuevo producto</span></div>' : ''}
     <div class="vr-nombre">${esc(d.texto)}</div>
     <div class="vr-cod">${esc(d.material)} · ${esc(d.marca)}</div>
     <div class="vr-tienda-zona">
@@ -1381,11 +1415,15 @@ function tarjetaDestacadoHtml(d, i){
 }
 
 function pintarVistaRapida(filas){
-  const destacados = seleccionarTopStock(filas, 5);
+  const nuevos = filtrarProductosNuevos();
+  const idsNuevos = new Set(nuevos.map(idLinea));
+  const topStock = seleccionarTopStock(filas, 5).filter(d => !idsNuevos.has(idLinea(d)));
+  const destacados = [...nuevos, ...topStock];
   if (MOSTRAR_DEBUG_VISTA_RAPIDA){
     console.debug('[Vista rápida] filtros activos:', JSON.parse(JSON.stringify(estado)));
+    console.debug('[Vista rápida] productos nuevos destacados:', nuevos.map(d => ({id: idLinea(d), material: d.material})));
   }
-  $('vrSubtitulo').textContent = textoContextoVistaRapida();
+  $('vrSubtitulo').textContent = textoContextoVistaRapida(nuevos.length);
   $('vrSiguiente').hidden = destacados.length === 0;
 
   if (!destacados.length){
@@ -1557,6 +1595,7 @@ function filaAItem(f){
     zona: D.zonas[f[Z]], tienda: D.tiendas[f[T]],
     stock: f[ST], precioNormal: f[PN], valorRemate: f[VR],
     descuentoPct: calcularDescuentoPct(f[PN], f[VR]),
+    nuevo: f[NV]===1,
   };
 }
 /* Busca en D.filas el registro real (mismo material+tienda+zona) para leer
@@ -1586,9 +1625,12 @@ function categoriaZona(zona){
 }
 function esRM(cat){ return cat==='RM1' || cat==='RM2' || cat==='RM3'; }
 /* La zona base es la primera RM/Norte/Sur/otra agregada (Ecommerce y CD no
-   fijan base por si solos -- son "puente" entre tiendas RM). */
+   fijan base por si solos -- son "puente" entre tiendas RM; los productos
+   marcados "nuevo" -- ver MATERIALES_NUEVOS en generar_portal.py -- tampoco
+   fijan base, por la misma razon que Ecommerce/CD: se excluyen a proposito). */
 function zonaBaseActual(){
   for (const l of SELECCION.lineas){
+    if (l.nuevo) continue;
     const cat = categoriaZona(l.zona);
     if (cat !== 'Ecommerce' && cat !== 'CD') return cat;
   }
@@ -1601,7 +1643,13 @@ function zonasPermitidasTexto(){
   if (esRM(base)) return `${base}, Ecommerce y CD`;
   return base;
 }
-function validarCompatibilidadZona(zona){
+/* Los productos marcados "nuevo" (destacados en Vista Rapida, ver
+   plantilla_portal.html: tarjetaDestacadoHtml) combinan con CUALQUIER zona
+   -- regla de negocio pedida explicitamente solo para esos 9 productos, no
+   para el resto del catalogo de CD/Ecommerce (que sigue las reglas
+   normales de abajo). */
+function validarCompatibilidadZona(zona, esNuevo){
+  if (esNuevo) return {ok:true};
   const catNueva = categoriaZona(zona);
   if (SELECCION.lineas.length === 0) return {ok:true};
   const base = zonaBaseActual();
@@ -1639,7 +1687,7 @@ function agregarASeleccion(item){
     mostrarMensajeSeleccion('Este producto está agotado y no se puede agregar a tu selección.', 'error');
     return false;
   }
-  const compat = validarCompatibilidadZona(item.zona);
+  const compat = validarCompatibilidadZona(item.zona, item.nuevo);
   if (!compat.ok){
     mostrarMensajeSeleccion(compat.motivo, 'error');
     return false;
@@ -1653,7 +1701,7 @@ function agregarASeleccion(item){
       id,
       material: item.material, texto: item.texto, marca: item.marca, subcategoria: item.subcategoria,
       marcaVehiculo: item.marcaVehiculo, modelo: item.modelo, motor: item.motor, anios: item.anios,
-      tienda: item.tienda, zona: item.zona,
+      tienda: item.tienda, zona: item.zona, nuevo: !!item.nuevo,
       stockCapturado: item.stock, precioCapturado: item.valorRemate,
       cantidad: (item.stock ?? 0) > 0 ? 1 : 0,
       observacion: '',

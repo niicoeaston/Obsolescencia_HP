@@ -80,6 +80,19 @@ CATEGORIAS_DESTACADAS_REFERENCIA = [
     ("Bujía de encendido", ["BUJIA INCANDESCENTE"], "icono_bujia"),
 ]
 
+# Productos marcados a mano como "nuevo producto": se destacan en Vista
+# Rapida con una etiqueta, en TODAS las zonas (sin importar el filtro de
+# Zona/Tienda activo -- llegan por CD, que abastece pedidos de cualquier
+# tienda del pais). Nunca se infiere automaticamente comparando versiones
+# del Excel: se agrega el material aqui solo cuando el usuario confirma que
+# es un ingreso nuevo real.
+#
+# Agregado 2026-08-25 (V8): 9 parachoques nuevos disponibles en CD.
+MATERIALES_NUEVOS = {
+    "1094160", "1094162", "1094163", "1094154",
+    "1107928", "1107905", "1107901", "1107937", "1107902",
+}
+
 # Orden en que se ofrecen las zonas en el selector: geograficas de norte a
 # sur primero, luego las no geograficas. Cualquier zona nueva que aparezca
 # en el Excel y no este en esta lista se agrega al final, alfabetica -- no
@@ -203,6 +216,7 @@ def main() -> int:
             limpio(getattr(fila, "precio_normal", None)),
             limpio(fila.valor_remate),
             idx_opcional(d_cod_fab, getattr(fila, "codigo_fabricante", None)),
+            1 if str(fila.material).strip() in MATERIALES_NUEVOS else 0,
         ])
 
     # --- Apertura de anios (SOLO para filtrar/buscar; ver anios.py) --------
@@ -225,6 +239,17 @@ def main() -> int:
     todos_los_anios = sorted({a for lista in anios_por_indice for a in lista})
     print(f"\n  Años: {len(todos_los_anios)} años distintos encontrados "
           f"({todos_los_anios[0]}-{todos_los_anios[-1]} si hay alguno)" if todos_los_anios else "\n  Años: ninguno")
+
+    # --- Aviso si algun material de MATERIALES_NUEVOS no aparece en el Excel
+    materiales_en_base = {str(m).strip() for m in df["material"]}
+    faltantes_nuevos = MATERIALES_NUEVOS - materiales_en_base
+    if faltantes_nuevos:
+        advertencias_generales.append(
+            f"{len(faltantes_nuevos)} material(es) en MATERIALES_NUEVOS no aparecen en el "
+            f"Excel (revisar generar_portal.py): {sorted(faltantes_nuevos)}"
+        )
+    print(f"\n  Productos nuevos destacados en Vista Rapida: "
+          f"{len(MATERIALES_NUEVOS) - len(faltantes_nuevos)} de {len(MATERIALES_NUEVOS)} encontrados")
 
     # --- Zonas en el orden fijo de ORDEN_ZONAS -----------------------------
     zonas_presentes = [z for z in ORDEN_ZONAS if z in d_zona.mapa]
