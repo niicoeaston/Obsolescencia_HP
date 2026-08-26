@@ -762,3 +762,61 @@ errores de consola, sin diferencias de comportamiento.
 
 Confirmado: `index.html` generado después de la limpieza tiene el mismo
 conteo de productos (17.594) y el mismo tamaño (1.57 MB) que antes.
+
+## 15. Productos "nuevo producto" (ingresos destacados en CD)
+
+A partir de la V8 del Excel, el usuario empezó a recibir ingresos de
+productos nuevos (repuestos de carrocería: parachoques, ópticos, farolas,
+espejos, neblineros) que llegan por **Centro de Distribución** y pueden
+pedirse desde cualquier tienda del país. Se construyó un mecanismo simple
+para destacarlos, pensado para repetirse cada vez que llegue un lote nuevo.
+
+### Cómo marcar un lote nuevo
+
+En `generar_portal.py`, `MATERIALES_NUEVOS` es la unión de sets por lote
+(`MATERIALES_NUEVOS_V8`, `MATERIALES_NUEVOS_V9`, …). **Nunca se infiere
+automáticamente** comparando versiones del Excel (aunque así se detectaron
+la primera vez, con un diff manual V7→V8 y V8→V9) — se agrega el material
+solo cuando el usuario confirma que es un ingreso real. Para un lote nuevo:
+agregar un `MATERIALES_NUEVOS_V{n}` con los materiales confirmados y
+sumarlo al `MATERIALES_NUEVOS` combinado; los lotes anteriores **no se
+quitan** (se acumulan) salvo que el usuario pida explícitamente dejar de
+destacar alguno.
+
+Cada fila lleva un flag `nuevo` (columna `NV` del array `filas`, ver
+`const Z=0,...,NV=15` en `plantilla_portal.html`) que se resuelve en
+`filaAItem()` como `item.nuevo`.
+
+### Dónde se nota
+
+- **Vista Rápida**: `filtrarProductosNuevos()` los busca en **todo**
+  `D.filas`, ignorando Zona/Tienda a propósito (llegan por CD) pero
+  respetando Subcategoría/Marca vehículo/Modelo/Año/búsqueda. Se anteponen
+  siempre al carrusel, con la etiqueta `.vr-badge-nuevo` ("Nuevo
+  producto"), delante de los productos con más stock (`pintarVistaRapida`).
+- **Filtro "Ver solo productos nuevos"** (`#btnSoloNuevos`, junto al botón
+  de Filtros de aplicación): activa `estado.soloNuevos`, que en `filtrar()`
+  también ignora Zona/Tienda y limita a `f[NV]===1`. Con el filtro activo
+  se desbloquean Subcategoría/Marca vehículo/Modelo/Año/Buscar **sin
+  necesidad de elegir zona** (normalmente exigen zona seleccionada primero,
+  ver `desbloqueadoFiltros` en `render()`) — Tienda sigue bloqueada porque
+  para estos productos no representa una tienda real navegable (siempre es
+  el registro de CD). El contador del botón (`TOTAL_PRODUCTOS_NUEVOS`) es
+  fijo, no depende de filtros.
+- **"Mi selección"**: `validarCompatibilidadZona(zona, esNuevo)` retorna
+  `{ok:true}` de inmediato si `esNuevo` es verdadero — **regla acotada solo
+  a los materiales marcados**, no a todo CD/Ecommerce (que sigue las reglas
+  normales de `categoriaZona()`/zona base). Las líneas de estos productos
+  guardan `nuevo:true` y no fijan la zona base de la selección (igual que
+  Ecommerce/CD, ver `zonaBaseActual()`).
+
+### Verificado
+
+Con datos reales (9 materiales en V8, 93 más en V9 — sin solapamiento,
+102 en total): badges visibles en Vista Rápida sin importar la zona
+filtrada (probado en Zona Norte, Zona Sur, RM1); un producto nuevo
+combina con cualquier zona base en "Mi selección" mientras uno normal de
+CD sigue bloqueado si la base no es RM; el filtro "Solo productos nuevos"
+muestra los 102 sin zona seleccionada, se puede acotar por Subcategoría
+(ej. "Óptico Izquierdo" → 30), y al desactivarlo vuelve exactamente al
+comportamiento anterior (zona obligatoria, subcategoría bloqueada).

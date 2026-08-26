@@ -208,6 +208,24 @@ button,input,select{font:inherit;color:inherit}
   background:var(--rojo);color:#fff;border-radius:999px;min-width:19px;height:19px;
   font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;
 }
+.fila-botones-filtro{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.fila-botones-filtro .btn-mas-filtros{margin-top:0;flex:1 1 260px}
+.btn-solo-nuevos{
+  appearance:none;display:inline-flex;align-items:center;gap:9px;
+  background:var(--zebra);border:1.5px dashed var(--borde-fuerte);color:var(--tinta-2);
+  border-radius:var(--radio-chico);min-height:44px;padding:0 16px;font-size:13.5px;font-weight:700;
+  cursor:pointer;flex:1 1 220px;justify-content:flex-start;transition:background .15s,border-color .15s,color .15s;
+}
+.btn-solo-nuevos:hover{border-color:var(--naranja);color:var(--naranja)}
+.switch-nuevos-punto{
+  width:9px;height:9px;border-radius:50%;background:var(--borde-fuerte);flex:0 0 auto;transition:background .15s;
+}
+.btn-solo-nuevos[aria-pressed="true"]{
+  background:var(--naranja-suave);border-style:solid;border-color:var(--naranja);color:var(--naranja);
+}
+.btn-solo-nuevos[aria-pressed="true"] .switch-nuevos-punto{background:var(--naranja)}
+.badge-nuevos-contador{background:var(--naranja)}
+@media(max-width:640px){.fila-botones-filtro{flex-direction:column}}
 .bloque-aplicacion{display:none;margin-top:14px;padding-top:14px;border-top:1px dashed var(--borde)}
 .bloque-aplicacion.abierto{display:block}
 .fila-buscar{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:end;margin-top:14px}
@@ -749,12 +767,19 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
           </div>
         </div>
 
-        <button class="btn-mas-filtros" id="btnMasFiltros" type="button" aria-expanded="false" aria-controls="bloqueAplicacion">
-          <img class="icono-tecnico icono-btn-filtro" src="data:image/png;base64,__ICONO_FILTRO__" alt="">
-          Filtros de aplicación (Marca, Modelo, Año)
-          <span class="badge-filtros" id="badgeMasFiltros" hidden>0</span>
-          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+        <div class="fila-botones-filtro">
+          <button class="btn-mas-filtros" id="btnMasFiltros" type="button" aria-expanded="false" aria-controls="bloqueAplicacion">
+            <img class="icono-tecnico icono-btn-filtro" src="data:image/png;base64,__ICONO_FILTRO__" alt="">
+            Filtros de aplicación (Marca, Modelo, Año)
+            <span class="badge-filtros" id="badgeMasFiltros" hidden>0</span>
+            <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn-solo-nuevos" id="btnSoloNuevos" type="button" aria-pressed="false">
+            <span class="switch-nuevos-punto" aria-hidden="true"></span>
+            Ver solo productos nuevos
+            <span class="badge-filtros badge-nuevos-contador" id="contadorSoloNuevos" hidden>0</span>
+          </button>
+        </div>
 
         <div class="bloque-aplicacion" id="bloqueAplicacion">
           <div class="fila-filtros fila-aplicacion">
@@ -927,16 +952,29 @@ function aniosDeFila(f){
   return f[AN]>=0 ? (D.aniosPorIndice[f[AN]] || []) : [];
 }
 
+/* Total de productos nuevos (fijo, no depende de filtros) -- se muestra
+   como contador en el botón "Ver solo productos nuevos". */
+const TOTAL_PRODUCTOS_NUEVOS = D.filas.filter(f => f[NV]===1 && Number.isFinite(f[ST]) && f[ST]>0).length;
+{
+  const contador = $('contadorSoloNuevos');
+  if (TOTAL_PRODUCTOS_NUEVOS > 0){ contador.hidden = false; contador.textContent = TOTAL_PRODUCTOS_NUEVOS; }
+}
+
 const estado = {
   zona:'', tienda:'', subcat:'', marcaVeh:'', modelo:'', anio:'', q:'',
-  orden:'remate', sentido:'desc', pagina:1,
+  orden:'remate', sentido:'desc', pagina:1, soloNuevos:false,
 };
 const PORPAGINA = 40;
 
 /* ---------------- filtrado ---------------- */
 function filtrar(omitir){
-  const zi = (omitir!=='zona' && estado.zona) ? D.zonas.indexOf(estado.zona) : -1;
-  const ti = (omitir!=='tienda' && estado.tienda) ? D.tiendas.indexOf(estado.tienda) : -1;
+  /* "Solo productos nuevos" ignora Zona/Tienda a propósito (mismo criterio
+     que Vista Rápida, ver filtrarProductosNuevos): llegan por CD, que
+     abastece pedidos de cualquier tienda del país. Sí respeta Subcategoría/
+     Marca vehículo/Modelo/Año/búsqueda. */
+  const soloNuevos = omitir!=='soloNuevos' && estado.soloNuevos;
+  const zi = (!soloNuevos && omitir!=='zona' && estado.zona) ? D.zonas.indexOf(estado.zona) : -1;
+  const ti = (!soloNuevos && omitir!=='tienda' && estado.tienda) ? D.tiendas.indexOf(estado.tienda) : -1;
   const si = (omitir!=='subcat' && estado.subcat) ? D.subcats.indexOf(estado.subcat) : -1;
   const mvi = (omitir!=='marcaVeh' && estado.marcaVeh) ? D.marcasVehiculo.indexOf(estado.marcaVeh) : -1;
   const moi = (omitir!=='modelo' && estado.modelo) ? D.modelos.indexOf(estado.modelo) : -1;
@@ -945,6 +983,7 @@ function filtrar(omitir){
   const out = [];
   for (let i=0;i<D.filas.length;i++){
     const f = D.filas[i];
+    if (soloNuevos && f[NV]!==1) continue;
     if (zi>=0 && f[Z]!==zi) continue;
     if (ti>=0 && f[T]!==ti) continue;
     if (si>=0 && f[SC]!==si) continue;
@@ -962,25 +1001,25 @@ function opcionesTienda(){
   return D.tiendas.filter((_,i)=>vistos.has(i));
 }
 function opcionesSubcat(){
-  if (!estado.zona) return [];
+  if (!estado.zona && !estado.soloNuevos) return [];
   const base = filtrar('subcat');
   const vistos = new Set(base.map(f=>f[SC]));
   return D.subcats.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
 }
 function opcionesMarcaVeh(){
-  if (!estado.zona) return [];
+  if (!estado.zona && !estado.soloNuevos) return [];
   const base = filtrar('marcaVeh');
   const vistos = new Set(base.map(f=>f[MV]).filter(i=>i>=0));
   return D.marcasVehiculo.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
 }
 function opcionesModelo(){
-  if (!estado.zona) return [];
+  if (!estado.zona && !estado.soloNuevos) return [];
   const base = filtrar('modelo');
   const vistos = new Set(base.map(f=>f[MO]).filter(i=>i>=0));
   return D.modelos.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
 }
 function opcionesAnio(){
-  if (!estado.zona) return [];
+  if (!estado.zona && !estado.soloNuevos) return [];
   const base = filtrar('anio');
   const anios = new Set();
   base.forEach(f => aniosDeFila(f).forEach(a => anios.add(a)));
@@ -1000,14 +1039,19 @@ function mensajeHtml(texto, tipo, icono){
 }
 function pintarMensajes(filas){
   const msgs = [];
+  const desbloqueado = !!estado.zona || estado.soloNuevos;
   if (!estado.zona){
-    msgs.push(mensajeHtml('Selecciona una <b>zona</b> para ver los productos disponibles.', 'dato', 'ℹ️'));
+    if (estado.soloNuevos){
+      msgs.push(mensajeHtml('Mostrando solo <b>productos nuevos</b> (disponibles en Centro de Distribución para todas las zonas). Selecciona una zona para acotar por tienda.', 'dato', 'ℹ️'));
+    } else {
+      msgs.push(mensajeHtml('Selecciona una <b>zona</b> para ver los productos disponibles.', 'dato', 'ℹ️'));
+    }
   } else if (!estado.tienda){
     const n = opcionesTienda().length;
     msgs.push(mensajeHtml(`Mostrando productos de <b>toda ${esc(estado.zona)}</b> (${n} ${n===1?'tienda':'tiendas'}). Selecciona una <b>tienda</b> para acotar.`, 'dato', 'ℹ️'));
   }
-  if (estado.zona){
-    const lugar = estado.tienda || estado.zona;
+  if (desbloqueado){
+    const lugar = estado.tienda || estado.zona || 'los productos nuevos';
     const sinPrecio = filas.filter(f=>f[VR]===null).length;
     if (sinPrecio) msgs.push(mensajeHtml(`<b>${num(sinPrecio)}</b> producto(s) sin valor remate se muestran como «Precio pendiente».`, 'aviso', '⚠️'));
     if (!estado.subcat && !estado.q && filas.length===0){
@@ -1181,16 +1225,17 @@ function actualizarPaso(){
 }
 
 function render(){
+  const desbloqueadoFiltros = !!estado.zona || estado.soloNuevos;
   llenarSelect($('fZona'), D.zonas, estado.zona, false);
   llenarSelect($('fTienda'), opcionesTienda(), estado.tienda, !estado.zona);
-  llenarSelect($('fSubcat'), opcionesSubcat(), estado.subcat, !estado.zona);
-  llenarSelect($('fMarcaVeh'), opcionesMarcaVeh(), estado.marcaVeh, !estado.zona);
-  llenarSelect($('fModelo'), opcionesModelo(), estado.modelo, !estado.zona);
-  llenarSelect($('fAnio'), opcionesAnio(), estado.anio, !estado.zona);
-  $('fBuscar').disabled = !estado.zona;
+  llenarSelect($('fSubcat'), opcionesSubcat(), estado.subcat, !desbloqueadoFiltros);
+  llenarSelect($('fMarcaVeh'), opcionesMarcaVeh(), estado.marcaVeh, !desbloqueadoFiltros);
+  llenarSelect($('fModelo'), opcionesModelo(), estado.modelo, !desbloqueadoFiltros);
+  llenarSelect($('fAnio'), opcionesAnio(), estado.anio, !desbloqueadoFiltros);
+  $('fBuscar').disabled = !desbloqueadoFiltros;
   $('fBuscar').value = estado.q;
   $('ayuda-tienda').style.display = estado.zona ? 'none' : '';
-  $('ayuda-subcat').style.display = estado.zona ? 'none' : '';
+  $('ayuda-subcat').style.display = desbloqueadoFiltros ? 'none' : '';
   $('fOrden').value = estado.orden; $('fSentido').value = estado.sentido;
   actualizarPaso();
 
@@ -1199,18 +1244,20 @@ function render(){
   if (activosAplicacion){ badge.hidden=false; badge.textContent = activosAplicacion; }
   else badge.hidden = true;
 
+  $('btnSoloNuevos').setAttribute('aria-pressed', String(estado.soloNuevos));
+
   const filas = filtrar();
   pintarVistaRapida(filas);
   pintarMensajes(filas);
 
-  const mostrar = !!estado.zona && filas.length>0;
+  const mostrar = (!!estado.zona || estado.soloNuevos) && filas.length>0;
   $('zona-resultados').hidden = !mostrar;
   $('btnTodaTienda').hidden = !(estado.subcat);
 
   if (mostrar){
     FILTRADAS = ordenar(filas);
-    const detalle = [estado.zona, estado.tienda, estado.subcat, estado.marcaVeh, estado.modelo,
-                     estado.anio?('Año '+estado.anio):''].filter(Boolean).join(' · ');
+    const detalle = [estado.soloNuevos?'Solo productos nuevos':'', estado.zona, estado.tienda, estado.subcat,
+                     estado.marcaVeh, estado.modelo, estado.anio?('Año '+estado.anio):''].filter(Boolean).join(' · ');
     $('conteo').innerHTML = `${num(FILTRADAS.length)} ${FILTRADAS.length===1?'producto encontrado':'productos encontrados'}<span>${esc(detalle)}</span>`;
     pintarResultados(FILTRADAS);
   } else {
@@ -1262,6 +1309,10 @@ $('fBuscar').addEventListener('input', e=>{
 });
 $('btnLimpiar').addEventListener('click', ()=>{
   estado.zona=estado.tienda=estado.subcat=estado.marcaVeh=estado.modelo=estado.anio=estado.q='';
+  estado.soloNuevos=false; estado.pagina=1; render();
+});
+$('btnSoloNuevos').addEventListener('click', ()=>{
+  estado.soloNuevos = !estado.soloNuevos;
   estado.pagina=1; render();
 });
 $('btnTodaTienda').addEventListener('click', ()=>{ estado.subcat=''; estado.pagina=1; render(); });
