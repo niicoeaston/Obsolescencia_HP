@@ -952,12 +952,17 @@ function aniosDeFila(f){
   return f[AN]>=0 ? (D.aniosPorIndice[f[AN]] || []) : [];
 }
 
-/* Total de productos nuevos (fijo, no depende de filtros) -- se muestra
-   como contador en el botón "Ver solo productos nuevos". */
-const TOTAL_PRODUCTOS_NUEVOS = D.filas.filter(f => f[NV]===1 && Number.isFinite(f[ST]) && f[ST]>0).length;
+/* Cantidad de SKU nuevos distintos (fija, no depende de filtros) -- se
+   muestra como contador en el botón "Ver solo productos nuevos". Cuenta
+   materiales distintos, no filas: un mismo SKU puede tener varias filas
+   (CD + tiendas donde ya llegó stock, ver actualizar_stock.py) y el
+   contador no debe crecer solo porque se agregaron mas tiendas. */
+const TOTAL_SKU_NUEVOS = new Set(
+  D.filas.filter(f => f[NV]===1 && Number.isFinite(f[ST]) && f[ST]>0).map(f => f[M])
+).size;
 {
   const contador = $('contadorSoloNuevos');
-  if (TOTAL_PRODUCTOS_NUEVOS > 0){ contador.hidden = false; contador.textContent = TOTAL_PRODUCTOS_NUEVOS; }
+  if (TOTAL_SKU_NUEVOS > 0){ contador.hidden = false; contador.textContent = TOTAL_SKU_NUEVOS; }
 }
 
 const estado = {
@@ -1375,7 +1380,10 @@ function textoContextoVistaRapida(nuevosCount){
   const base = partes.length ? `Los productos con más stock en ${partes.join(' · ')}` : 'Los productos con más stock a nivel nacional';
   if (!nuevosCount) return base;
   const plural = nuevosCount === 1 ? 'producto nuevo' : 'productos nuevos';
-  return `${nuevosCount} ${plural} en Centro de Distribución (disponibles para todas las zonas) + ${base.charAt(0).toLowerCase()}${base.slice(1)}`;
+  const donde = estado.zona
+    ? `en Centro de Distribución y en ${estado.zona}`
+    : 'en Centro de Distribución (disponibles para todas las zonas)';
+  return `${nuevosCount} ${plural} ${donde} + ${base.charAt(0).toLowerCase()}${base.slice(1)}`;
 }
 
 /* Selecciona los N productos con mayor stock DENTRO del mismo array ya
@@ -1412,12 +1420,17 @@ function seleccionarTopStock(filas, limite){
   return top;
 }
 
-/* Productos marcados como "nuevo" (f[NV]===1, ver generar_portal.py):
-   se buscan en TODO D.filas, ignorando Zona/Tienda a proposito (llegan por
-   CD, que abastece pedidos de cualquier tienda del pais) -- pero sí
-   respetan Subcategoria/Marca vehiculo/Modelo/Año/busqueda, para no
-   mostrar un parachoque si el usuario esta buscando otra cosa. */
+/* Productos marcados como "nuevo" (f[NV]===1, ver generar_portal.py) para el
+   carrusel de Vista Rapida: SIEMPRE los que estan disponibles en CD (llegan
+   ahi primero y abastecen pedidos de cualquier tienda), y ADEMAS -- solo
+   cuando hay una Zona filtrada -- los que ya tienen disponibilidad real en
+   tiendas de esa zona (filas agregadas por actualizar_stock.py). Fuera de
+   CD y de la zona filtrada no se muestran (a diferencia del filtro "Solo
+   productos nuevos" de mas abajo, que si ignora Zona a proposito). Respeta
+   Subcategoria/Marca vehiculo/Modelo/Año/busqueda igual que siempre. */
 function filtrarProductosNuevos(){
+  const ziCD = D.zonas.indexOf('CD');
+  const ziSeleccionada = estado.zona ? D.zonas.indexOf(estado.zona) : -1;
   const si = estado.subcat ? D.subcats.indexOf(estado.subcat) : -1;
   const mvi = estado.marcaVeh ? D.marcasVehiculo.indexOf(estado.marcaVeh) : -1;
   const moi = estado.modelo ? D.modelos.indexOf(estado.modelo) : -1;
@@ -1428,6 +1441,9 @@ function filtrarProductosNuevos(){
     const f = D.filas[i];
     if (f[NV]!==1) continue;
     if (!(Number.isFinite(f[ST]) && f[ST] > 0)) continue;
+    const enCD = f[Z]===ziCD;
+    const enZonaFiltrada = ziSeleccionada>=0 && f[Z]===ziSeleccionada;
+    if (!enCD && !enZonaFiltrada) continue;
     if (si>=0 && f[SC]!==si) continue;
     if (mvi>=0 && f[MV]!==mvi) continue;
     if (moi>=0 && f[MO]!==moi) continue;

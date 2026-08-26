@@ -763,46 +763,73 @@ errores de consola, sin diferencias de comportamiento.
 Confirmado: `index.html` generado después de la limpieza tiene el mismo
 conteo de productos (17.594) y el mismo tamaño (1.57 MB) que antes.
 
-## 15. Productos "nuevo producto" (ingresos destacados en CD)
+## 15. Productos "nuevo producto" (ingresos destacados en CD + disponibilidad por tienda)
 
 A partir de la V8 del Excel, el usuario empezó a recibir ingresos de
 productos nuevos (repuestos de carrocería: parachoques, ópticos, farolas,
-espejos, neblineros) que llegan por **Centro de Distribución** y pueden
-pedirse desde cualquier tienda del país. Se construyó un mecanismo simple
-para destacarlos, pensado para repetirse cada vez que llegue un lote nuevo.
+espejos, neblineros) que llegan primero por **Centro de Distribución** y
+que, con el correr de los días, se reparten a tiendas reales (se ve en el
+archivo diario de stock). Se construyó un mecanismo para destacarlos y para
+reflejar esa disponibilidad real a medida que llega, pensado para repetirse
+cada vez que entre un lote nuevo.
 
 ### Cómo marcar un lote nuevo
 
-En `generar_portal.py`, `MATERIALES_NUEVOS` es la unión de sets por lote
-(`MATERIALES_NUEVOS_V8`, `MATERIALES_NUEVOS_V9`, …). **Nunca se infiere
-automáticamente** comparando versiones del Excel (aunque así se detectaron
-la primera vez, con un diff manual V7→V8 y V8→V9) — se agrega el material
-solo cuando el usuario confirma que es un ingreso real. Para un lote nuevo:
-agregar un `MATERIALES_NUEVOS_V{n}` con los materiales confirmados y
-sumarlo al `MATERIALES_NUEVOS` combinado; los lotes anteriores **no se
-quitan** (se acumulan) salvo que el usuario pida explícitamente dejar de
-destacar alguno.
+`materiales_nuevos.py` (compartido por `generar_portal.py` y
+`actualizar_stock.py`) define `MATERIALES_NUEVOS` como la unión de sets por
+lote (`MATERIALES_NUEVOS_V8`, `MATERIALES_NUEVOS_V9`, …). **Nunca se
+infiere automáticamente** comparando versiones del Excel (aunque así se
+detectaron la primera vez, con un diff manual V7→V8 y V8→V9) — se agrega el
+material solo cuando el usuario confirma que es un ingreso real. Para un
+lote nuevo: agregar un `MATERIALES_NUEVOS_V{n}` con los materiales
+confirmados y sumarlo al `MATERIALES_NUEVOS` combinado; los lotes
+anteriores **no se quitan** (se acumulan) salvo que el usuario pida
+explícitamente dejar de destacar alguno.
 
 Cada fila lleva un flag `nuevo` (columna `NV` del array `filas`, ver
 `const Z=0,...,NV=15` en `plantilla_portal.html`) que se resuelve en
 `filaAItem()` como `item.nuevo`.
 
+### `actualizar_stock.py`: agrega disponibilidad real por tienda
+
+Cuando el archivo diario trae un material de `MATERIALES_NUEVOS` en una
+tienda que **no** está en el maestro, en vez de descartarlo (regla normal
+para productos desconocidos) se agrega una **fila nueva**: copia los
+valores fijos (precio, marca, subcategoría, aplicación vehicular, …) de la
+fila ya existente de ese material en CD, y toma la **Zona real de esa
+tienda** de cualquier otra fila existente del maestro — nunca se inventa.
+Si la tienda no aparece en ninguna otra fila (tienda realmente nueva, sin
+nada de obsolescencia todavía) o el stock del día es negativo/cero, queda
+igual que antes en `productos_nuevos_ignorados` (no se agrega). Reportado
+aparte como `resultado.filas_agregadas`. Confirmado con el usuario el
+2026-08-26.
+
 ### Dónde se nota
 
-- **Vista Rápida**: `filtrarProductosNuevos()` los busca en **todo**
-  `D.filas`, ignorando Zona/Tienda a propósito (llegan por CD) pero
-  respetando Subcategoría/Marca vehículo/Modelo/Año/búsqueda. Se anteponen
-  siempre al carrusel, con la etiqueta `.vr-badge-nuevo` ("Nuevo
-  producto"), delante de los productos con más stock (`pintarVistaRapida`).
+- **Vista Rápida**: `filtrarProductosNuevos()` muestra **siempre** los
+  nuevos disponibles en CD, y **además** — solo cuando hay una Zona
+  filtrada — los que ya tienen disponibilidad real en tiendas de esa zona
+  (pedido explícito del usuario: "en el carrusel de vista rápida solo deja
+  el stock disponible en CD y al filtrar por zona, el correspondiente a las
+  tiendas de la zona"). Fuera de CD y de la zona filtrada no aparecen — a
+  diferencia del filtro "Solo productos nuevos" de más abajo, que sí ignora
+  Zona a propósito. Respeta Subcategoría/Marca vehículo/Modelo/Año/búsqueda
+  igual que siempre. Se anteponen al carrusel con la etiqueta
+  `.vr-badge-nuevo` ("Nuevo producto"), delante de los productos con más
+  stock (`pintarVistaRapida`); el subtítulo (`textoContextoVistaRapida`)
+  distingue "en Centro de Distribución (disponibles para todas las zonas)"
+  cuando no hay zona elegida de "en Centro de Distribución y en {zona}"
+  cuando sí la hay.
 - **Filtro "Ver solo productos nuevos"** (`#btnSoloNuevos`, junto al botón
   de Filtros de aplicación): activa `estado.soloNuevos`, que en `filtrar()`
-  también ignora Zona/Tienda y limita a `f[NV]===1`. Con el filtro activo
+  ignora Zona/Tienda por completo (a diferencia de Vista Rápida) y limita a
+  `f[NV]===1` — pensado para ver/descargar TODAS las filas de estos
+  materiales en cualquier tienda del país de una vez. Con el filtro activo
   se desbloquean Subcategoría/Marca vehículo/Modelo/Año/Buscar **sin
   necesidad de elegir zona** (normalmente exigen zona seleccionada primero,
-  ver `desbloqueadoFiltros` en `render()`) — Tienda sigue bloqueada porque
-  para estos productos no representa una tienda real navegable (siempre es
-  el registro de CD). El contador del botón (`TOTAL_PRODUCTOS_NUEVOS`) es
-  fijo, no depende de filtros.
+  ver `desbloqueadoFiltros` en `render()`) — Tienda sigue bloqueada. El
+  contador del botón (`TOTAL_SKU_NUEVOS`) cuenta **materiales distintos**,
+  no filas — no crece solo porque un SKU llegó a más tiendas.
 - **"Mi selección"**: `validarCompatibilidadZona(zona, esNuevo)` retorna
   `{ok:true}` de inmediato si `esNuevo` es verdadero — **regla acotada solo
   a los materiales marcados**, no a todo CD/Ecommerce (que sigue las reglas
@@ -812,11 +839,18 @@ Cada fila lleva un flag `nuevo` (columna `NV` del array `filas`, ver
 
 ### Verificado
 
-Con datos reales (9 materiales en V8, 93 más en V9 — sin solapamiento,
-102 en total): badges visibles en Vista Rápida sin importar la zona
-filtrada (probado en Zona Norte, Zona Sur, RM1); un producto nuevo
-combina con cualquier zona base en "Mi selección" mientras uno normal de
-CD sigue bloqueado si la base no es RM; el filtro "Solo productos nuevos"
-muestra los 102 sin zona seleccionada, se puede acotar por Subcategoría
-(ej. "Óptico Izquierdo" → 30), y al desactivarlo vuelve exactamente al
-comportamiento anterior (zona obligatoria, subcategoría bloqueada).
+Con datos reales (9 materiales en V8, 93 más en V9 — sin solapamiento, 102
+SKU en total; 435 filas de disponibilidad por tienda agregadas el
+2026-08-26 con `Stock_26_08.XLSX`, cubriendo 8 zonas reales): Vista Rápida
+sin zona muestra exactamente 102 (solo CD); con Zona RM 1 sube a 172 (102
+CD + 70 en RM1); con Zona Sur a 161 (102 CD + 59 en Sur); "Mi selección"
+combina un producto nuevo con cualquier zona base mientras uno normal de CD
+sigue bloqueado si la base no es RM; el filtro "Solo productos nuevos"
+muestra las 537 filas sin zona seleccionada (ignora Zona a propósito),
+el contador del botón marca 102 (SKU, no filas), se puede acotar por
+Subcategoría (ej. "Óptico Izquierdo" → 30), y al desactivarlo vuelve
+exactamente al comportamiento anterior (zona obligatoria, subcategoría
+bloqueada). Dos tiendas del archivo diario (`AP0029 - Mall Plaza Oeste`,
+`AP0080 - Casablanca`) no se pudieron agregar por no tener zona conocida en
+el maestro — confirmado con el usuario que son tiendas nuevas sin
+obsolescencia todavía, no un error de cruce.

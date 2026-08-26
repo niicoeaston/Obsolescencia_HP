@@ -12,7 +12,12 @@ Reglas de negocio (confirmadas con el usuario el 2026-08-06):
   stock real -- y se reporta como "tienda ausente".
 - Los productos que aparecen en el archivo del dia pero no existen en el
   listado maestro se ignoran (no se agregan: falta precio, marca, categoria
-  y aplicacion vehicular) y se reportan aparte para revision manual.
+  y aplicacion vehicular) y se reportan aparte para revision manual --
+  EXCEPTO los materiales de MATERIALES_NUEVOS (ver materiales_nuevos.py):
+  para esos ya se conoce todo el dato fijo (llegaron por CD), asi que se
+  agrega una fila nueva por tienda con esos mismos datos, la Zona real de
+  esa tienda (tomada de cualquier otra fila existente de esa tienda) y el
+  stock del dia. Confirmado con el usuario el 2026-08-26.
 - Los productos que quedan en stock 0 NO se eliminan del listado: el portal
   los muestra marcados como "Agotado" (ver plantilla_portal.html).
 - El stock NUNCA sube ni se "recupera" solo (confirmado con el usuario el
@@ -43,6 +48,8 @@ from datetime import date
 from pathlib import Path
 
 import openpyxl
+
+from materiales_nuevos import MATERIALES_NUEVOS
 
 RAIZ_PROYECTO = Path(__file__).resolve().parent.parent
 CARPETA_STOCK_DIARIO = RAIZ_PROYECTO / "Actualizacion de Stock"
@@ -102,6 +109,7 @@ class ResultadoActualizacion:
     productos_agotados_nuevos: list = field(default_factory=list)
     productos_subida_ignorada: list = field(default_factory=list)
     productos_nuevos_ignorados: list = field(default_factory=list)
+    filas_agregadas: list = field(default_factory=list)
     respaldo: Path | None = None
 
 
@@ -166,6 +174,7 @@ def actualizar(fecha: date | None = None, guardar: bool = True) -> ResultadoActu
     filas = list(ws.iter_rows(min_row=1))
     header = [c.value for c in filas[0]]
     idx_tienda = header.index("Tienda")
+    idx_zona = header.index("Zona")
     idx_material = header.index("Material")
     idx_stock = header.index("Stock AP")
 
@@ -175,12 +184,25 @@ def actualizar(fecha: date | None = None, guardar: bool = True) -> ResultadoActu
     tiendas_en_maestro: set[str] = set()
     vistos_hoy: set[tuple[str, str]] = set()
 
+    # Para poder agregar filas nuevas de MATERIALES_NUEVOS en otras tiendas:
+    # una plantilla de valores fijos por material (precio, marca, subcategoria,
+    # aplicacion vehicular...) y la Zona real de cada tienda -- ambas se toman
+    # de filas YA existentes en el maestro, nunca inventadas.
+    plantilla_por_material: dict[str, list] = {}
+    zona_por_tienda: dict[str, str] = {}
+
     for fila in filas[1:]:
         tienda = str(fila[idx_tienda].value or "").strip()
         tiendas_en_maestro.add(tienda)
+        if tienda and tienda not in zona_por_tienda:
+            zona_por_tienda[tienda] = fila[idx_zona].value
+        material = _material_a_texto(fila[idx_material].value)
+        if material in MATERIALES_NUEVOS and (
+            material not in plantilla_por_material or tienda == TIENDA_CD
+        ):
+            plantilla_por_material[material] = [c.value for c in fila]
         if tienda not in tiendas_presentes:
             continue  # tienda ausente hoy: no se toca su stock
-        material = _material_a_texto(fila[idx_material].value)
         clave = (tienda, material)
         vistos_hoy.add(clave)
 
@@ -208,11 +230,31 @@ def actualizar(fecha: date | None = None, guardar: bool = True) -> ResultadoActu
     resultado.tiendas_ausentes = sorted(t for t in tiendas_en_maestro if t not in tiendas_presentes)
 
     for clave, cantidad in stock_diario.items():
-        if clave not in vistos_hoy:
-            tienda, material = clave
-            resultado.productos_nuevos_ignorados.append(
-                (tienda, material, textos_diario.get(clave, ""), cantidad)
-            )
+        if clave in vistos_hoy:
+            continue
+        tienda, material = clave
+        texto = textos_diario.get(clave, "")
+
+        # Disponibilidad real por tienda de un material ya conocido (llego
+        # por CD, ver MATERIALES_NUEVOS): se agrega una fila nueva copiando
+        # los datos fijos del material y la Zona real de esa tienda, en vez
+        # de descartarlo. Nunca se inventa Zona: si la tienda no aparece en
+        # ninguna otra fila del maestro, se reporta igual que un producto
+        # nuevo (no hay de donde tomar su zona).
+        plantilla = plantilla_por_material.get(material)
+        zona = zona_por_tienda.get(tienda)
+        cantidad_valida = max(0, cantidad)
+        if plantilla is not None and zona and cantidad_valida > 0:
+            nueva_fila = list(plantilla)
+            nueva_fila[idx_tienda] = tienda
+            nueva_fila[idx_zona] = zona
+            nueva_fila[idx_material] = plantilla[idx_material]
+            nueva_fila[idx_stock] = cantidad_valida
+            ws.append(nueva_fila)
+            resultado.filas_agregadas.append((tienda, material, texto, cantidad_valida, zona))
+            continue
+
+        resultado.productos_nuevos_ignorados.append((tienda, material, texto, cantidad))
 
     if guardar:
         CARPETA_RESPALDOS.mkdir(exist_ok=True)
@@ -240,6 +282,9 @@ def imprimir_reporte(r: ResultadoActualizacion) -> None:
     print(f"Subidas de stock ignoradas (regla: el stock no se recupera solo): {len(r.productos_subida_ignorada)}")
     for t, m, a, n in r.productos_subida_ignorada[:MAX_EJEMPLOS_REPORTE]:
         print(f"    - {m} en {t}: {a} -> {n} (se mantiene en {a})")
+    print(f"Filas nuevas agregadas (disponibilidad por tienda de productos nuevos): {len(r.filas_agregadas)}")
+    for t, m, texto, cant, zona in r.filas_agregadas[:MAX_EJEMPLOS_REPORTE]:
+        print(f"    - {m} ({texto}) en {t} [{zona}]: stock {cant}")
     print(f"Productos del archivo de hoy ignorados (no estaban en el listado): {len(r.productos_nuevos_ignorados)}")
     for t, m, texto, cant in r.productos_nuevos_ignorados[:MAX_EJEMPLOS_REPORTE]:
         print(f"    - {m} ({texto}) en {t}: stock hoy {cant}")
