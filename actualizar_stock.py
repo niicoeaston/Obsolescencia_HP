@@ -170,7 +170,7 @@ def actualizar(fecha: date | None = None, guardar: bool = True) -> ResultadoActu
     stock_diario, tiendas_presentes, textos_diario = leer_stock_diario(archivo_dia)
 
     wb = openpyxl.load_workbook(MASTER)
-    ws = wb["Base"]
+    ws = wb["Base"] if "Base" in wb.sheetnames else wb[max(wb.sheetnames, key=lambda h: wb[h].max_column)]
     filas = list(ws.iter_rows(min_row=1))
     header = [c.value for c in filas[0]]
     idx_tienda = header.index("Tienda")
