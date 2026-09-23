@@ -269,6 +269,7 @@ select:focus,input:focus{border-color:var(--rojo)}
 .btn.primario{background:var(--rojo);border-color:var(--rojo);color:#fff}
 .btn.primario:hover{background:var(--rojo-oscuro);border-color:var(--rojo-oscuro);color:#fff}
 .btn svg{vertical-align:-3px;margin-right:6px}
+a.btn{display:inline-flex;align-items:center;text-decoration:none}
 
 /* orden */
 .controles-orden{display:flex;gap:10px;align-items:center;margin:0 0 16px;flex-wrap:wrap}
@@ -779,7 +780,7 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
             <label for="fBuscar">Buscar producto</label>
             <div class="buscador-wrap">
               <img class="icono-tecnico" src="data:image/png;base64,__ICONO_BUSCAR__" alt="">
-              <input type="search" id="fBuscar" placeholder="Ingresa nombre, código, código de fabricante, marca, modelo o año…" disabled autocomplete="off">
+              <input type="search" id="fBuscar" placeholder="Ingresa nombre, código, código de fabricante, marca, modelo o año…" autocomplete="off">
             </div>
           </div>
           <button class="link-limpiar" id="btnLimpiar" type="button">
@@ -833,10 +834,10 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
 
       <div class="barra-resultados">
         <div class="conteo" id="conteo"></div>
-        <button class="btn primario" id="btnDescargar" type="button">
+        <a class="btn primario" id="btnDescargarZonaExcel" hidden download>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3v13m0 0l-5-5m5 5l5-5M4 21h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Descargar listado filtrado
-        </button>
+          Descargar listado (Excel, por tienda)
+        </a>
       </div>
 
       <div class="tabla-caja">
@@ -1002,8 +1003,15 @@ function mensajeHtml(texto, tipo, icono){
 function pintarMensajes(filas){
   const msgs = [];
   const desbloqueado = !!estado.zona;
-  if (!estado.zona){
-    msgs.push(mensajeHtml('Selecciona una <b>zona</b> para ver los productos disponibles.', 'dato', 'ℹ️'));
+  if (!estado.zona && estado.q){
+    if (filas.length){
+      const nTiendas = new Set(filas.map(f=>f[T])).size;
+      msgs.push(mensajeHtml(`Buscando «${esc(estado.q)}» en <b>todas las zonas</b> (${nTiendas} ${nTiendas===1?'tienda':'tiendas'} con resultados). Selecciona una <b>zona</b> para acotar y ver más filtros.`, 'dato', 'ℹ️'));
+    } else {
+      msgs.push(mensajeHtml(`La búsqueda «${esc(estado.q)}» no encontró productos en ninguna zona.`, 'aviso', '⚠️'));
+    }
+  } else if (!estado.zona){
+    msgs.push(mensajeHtml('Selecciona una <b>zona</b> para ver los productos disponibles, o busca directo por código/SKU.', 'dato', 'ℹ️'));
   } else if (!estado.tienda){
     const n = opcionesTienda().length;
     msgs.push(mensajeHtml(`Mostrando productos de <b>toda ${esc(estado.zona)}</b> (${n} ${n===1?'tienda':'tiendas'}). Selecciona una <b>tienda</b> para acotar.`, 'dato', 'ℹ️'));
@@ -1190,7 +1198,6 @@ function render(){
   llenarSelect($('fMarcaVeh'), opcionesMarcaVeh(), estado.marcaVeh, !desbloqueadoFiltros);
   llenarSelect($('fModelo'), opcionesModelo(), estado.modelo, !desbloqueadoFiltros);
   llenarSelect($('fAnio'), opcionesAnio(), estado.anio, !desbloqueadoFiltros);
-  $('fBuscar').disabled = !desbloqueadoFiltros;
   $('fBuscar').value = estado.q;
   $('ayuda-tienda').style.display = estado.zona ? 'none' : '';
   $('ayuda-subcat').style.display = desbloqueadoFiltros ? 'none' : '';
@@ -1206,14 +1213,26 @@ function render(){
   pintarVistaRapida(filas);
   pintarMensajes(filas);
 
-  const mostrar = !!estado.zona && filas.length>0;
+  const mostrar = (!!estado.zona || !!estado.q) && filas.length>0;
   $('zona-resultados').hidden = !mostrar;
   $('btnTodaTienda').hidden = !(estado.subcat);
 
+  const archivoZonaExcel = estado.zona && D.info.archivosZonaExcel ? D.info.archivosZonaExcel[estado.zona] : null;
+  const btnZonaExcel = $('btnDescargarZonaExcel');
+  if (archivoZonaExcel){
+    btnZonaExcel.href = D.info.carpetaDescargas + encodeURIComponent(archivoZonaExcel);
+    btnZonaExcel.download = archivoZonaExcel;
+    btnZonaExcel.hidden = false;
+  } else {
+    btnZonaExcel.hidden = true;
+    btnZonaExcel.removeAttribute('href');
+  }
+
   if (mostrar){
     FILTRADAS = ordenar(filas);
-    const detalle = [estado.zona, estado.tienda, estado.subcat,
-                     estado.marcaVeh, estado.modelo, estado.anio?('Año '+estado.anio):''].filter(Boolean).join(' · ');
+    const detalle = [estado.zona || (estado.q ? 'Todas las zonas' : ''), estado.tienda, estado.subcat,
+                     estado.marcaVeh, estado.modelo, estado.anio?('Año '+estado.anio):'',
+                     estado.q?`"${estado.q}"`:''].filter(Boolean).join(' · ');
     $('conteo').innerHTML = `${num(FILTRADAS.length)} ${FILTRADAS.length===1?'producto encontrado':'productos encontrados'}<span>${esc(detalle)}</span>`;
     pintarResultados(FILTRADAS);
   } else {
@@ -1274,31 +1293,6 @@ $('btnMasFiltros').addEventListener('click', ()=>{
   $('btnMasFiltros').setAttribute('aria-expanded', String(abierto));
 });
 
-/* ---------------- descarga CSV ---------------- */
-$('btnDescargar').addEventListener('click', ()=>{
-  const cab = ['Zona','Tienda','Material','Código fabricante','Texto breve','Marca','Categoría','Subcategoría',
-               'Marca vehículo','Modelo','Motor','Rango de años original','Años aperturados',
-               'Stock disponible','Precio normal','Precio Liquidación'];
-  const filas = FILTRADAS.map(f=>{
-    const aniosAp = aniosDeFila(f).join(', ');
-    const fila = [D.zonas[f[Z]], D.tiendas[f[T]], D.materiales[f[M]], f[CF]>=0?D.codigosFabricante[f[CF]]:'', D.textos[f[X]], D.marcas[f[MA]],
-      D.categorias[f[CA]], D.subcats[f[SC]],
-      f[MV]>=0?D.marcasVehiculo[f[MV]]:'', f[MO]>=0?D.modelos[f[MO]]:'', f[MT]>=0?D.motores[f[MT]]:'',
-      f[AN]>=0?D.anios[f[AN]]:'', aniosAp,
-      f[ST]??'', f[PN]??'', f[VR]??''];
-    return fila.map(v=>/[;"\n]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':v).join(';');
-  });
-  const blob = new Blob(['﻿'+[cab.join(';'), ...filas].join('\r\n')], {type:'text/csv;charset=utf-8'});
-  const partes = ['obsolescencia'];
-  if (estado.zona) partes.push(estado.zona.replace(/[^A-Za-z0-9]+/g,'-'));
-  if (estado.tienda) partes.push(estado.tienda.split('–')[0].trim());
-  if (estado.subcat) partes.push(estado.subcat.replace(/[^A-Za-z0-9]+/g,'-').slice(0,24));
-  const hoy = new Date(D.info.marcaTiempo);
-  partes.push(hoy.toISOString().slice(0,10));
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download=partes.join('_')+'.csv'; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
-});
 
 /* ---------------- Vista rápida ---------------- */
 const FAVORITOS_KEY = 'ap-favoritos';
@@ -1488,7 +1482,7 @@ $('paso-actual').addEventListener('click', ()=>{
   $('fZona').focus();
 });
 $('btnBeneficioDescarga').addEventListener('click', ()=>{
-  const objetivo = estado.zona ? $('btnDescargar') : $('fZona');
+  const objetivo = estado.zona ? $('btnDescargarZonaExcel') : $('fZona');
   objetivo.scrollIntoView({behavior:'smooth', block:'center'});
   objetivo.focus();
 });

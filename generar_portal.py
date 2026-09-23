@@ -31,6 +31,7 @@ sys.path.insert(0, str(RAIZ_STREAMLIT))
 from src.services import cargador_excel as datos  # noqa: E402
 
 import anios  # noqa: E402
+import generar_listas_descargables as listas  # noqa: E402
 from materiales_nuevos import MATERIALES_NUEVOS  # noqa: E402
 
 PLANTILLA = RAIZ_PORTAL / "plantilla_portal.html"
@@ -152,6 +153,13 @@ def main() -> int:
     print(f"  {len(df):,} productos con stock en la base")
     if resultado.columnas_faltantes:
         print(f"  columnas opcionales no encontradas: {resultado.columnas_faltantes}")
+
+    print("\nGenerando las listas descargables por zona (Excel, una hoja por tienda)...")
+    _, resumen_listas, excluidos_sin_stock_listas = listas.generar(resultado)
+    archivos_zona_excel = {zona: nombre for zona, _, _, nombre in resumen_listas}
+    for zona, n_tiendas, filas, nombre in resumen_listas:
+        print(f"  - {nombre}: {n_tiendas} tienda(s), {filas} filas")
+    print(f"  ({excluidos_sin_stock_listas} productos con stock 0 excluidos de estas listas)")
 
     # --- Verificacion: una tienda no deberia tener mas de una zona --------
     por_tienda = df.groupby("tienda_label")["zona"].nunique()
@@ -292,6 +300,8 @@ def main() -> int:
             "totalZonas": len(zonas_presentes),
             "totalSubcats": int(df["subcategoria"].nunique()),
             "totalAnios": len(todos_los_anios),
+            "archivosZonaExcel": archivos_zona_excel,
+            "carpetaDescargas": "descargas/",
         },
     }
 
