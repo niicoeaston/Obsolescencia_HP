@@ -57,7 +57,7 @@ MASTER = RAIZ_PROYECTO / "dashboard-obsolescencia" / "data" / "Listado Obsolecen
 CARPETA_RESPALDOS = CARPETA_STOCK_DIARIO / "respaldos"
 
 CENTRO_CD = "0714"
-TIENDA_CD = "0714"
+TIENDA_CD = "Ega-Kat"  # etiqueta del CD en el maestro desde octubre (antes "0714")
 ALMACEN_VALIDO = "1100"
 
 MAX_EJEMPLOS_REPORTE = 20

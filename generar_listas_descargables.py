@@ -175,6 +175,13 @@ def generar(resultado=None):
         wb.save(CARPETA_SALIDA_PORTAL / nombre_archivo)
         resumen.append((zona, len(tiendas), filas_zona, nombre_archivo))
 
+    # Zonas que ya no existen en la base (ej. cambio de mes): sus Excel viejos se quitan.
+    vigentes = {nombre for _, _, _, nombre in resumen}
+    for carpeta in (CARPETA_SALIDA, CARPETA_SALIDA_PORTAL):
+        for viejo in carpeta.glob("Obsolescencia *.xlsx"):
+            if viejo.name not in vigentes:
+                viejo.unlink()
+
     return resultado, resumen, excluidos_sin_stock
 
 
