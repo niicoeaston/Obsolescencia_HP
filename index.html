@@ -880,6 +880,19 @@ tbody tr.fila-detalle td{padding:0}
   .rs-stats b{font-size:15px}
 }
 
+/* ---------- Pantallas grandes: mismo tamaño de letras y elementos, pero se aprovecha todo el ancho ---------- */
+:root{--ancho:1180px}
+@media(min-width:1400px){:root{--ancho:min(calc(100vw - 64px),3000px)}}
+.envoltura,.hero-interior,.mensajes,.seccion,.vista-rapida,.footer-interior{max-width:var(--ancho)}
+.topbar-fila{max-width:calc(var(--ancho) - 40px)}
+@media(min-width:1400px){
+  .hero-texto{max-width:760px}
+  .hero-interior{grid-template-columns:1.15fr 1fr}
+  .hero-ilustracion-caja img{max-width:640px}
+  .vr-tarjeta{flex:0 0 240px}
+}
+.vr-carrusel-caja.vr-cabe::after{display:none}
+
 /* ---------- Mensajes, ayuda y pie en móvil ---------- */
 .ayuda-pasos{border:0;box-shadow:var(--sombra-panel);border-radius:24px}
 .mensaje{border-radius:18px}
@@ -1393,22 +1406,7 @@ function ajustarAnchoDetalle(){
   const c = document.querySelector('.tabla-caja');
   if (c && c.clientWidth) document.documentElement.style.setProperty('--cw', c.clientWidth+'px');
 }
-/* Pantallas grandes: el diseño está pensado para ~1480 px de ancho y se ve chico en monitores más grandes. Se escala todo
-   (letras, botones, tarjetas) según el ancho disponible y, en pantallas muy anchas, también según el alto (relación de aspecto). */
-const ESC_BASE_W = 1480, ESC_BASE_H = 820, ESC_MAX = 2.6;
-function escalarPantalla(){
-  let z = 1;
-  if (window.innerWidth >= 1100){
-    z = Math.min(window.innerWidth/ESC_BASE_W, (window.innerHeight/ESC_BASE_H)*1.8);
-    z = Math.round(Math.max(1, Math.min(ESC_MAX, z))*20)/20;
-  }
-  const actual = parseFloat(document.documentElement.style.zoom) || 1;
-  if (z !== actual) document.documentElement.style.zoom = z===1 ? '' : String(z);
-  ajustarAnchoDetalle();
-}
-let _escT;
-window.addEventListener('resize', () => { clearTimeout(_escT); _escT = setTimeout(escalarPantalla, 80); });
-escalarPantalla();
+window.addEventListener('resize', ajustarAnchoDetalle);
 
 function pintarResultados(filas){
   const mostrarSubcat = !estado.subcat;
@@ -1512,10 +1510,11 @@ function render(){
 }
 
 /* ---------------- Resumen por tienda de la zona ---------------- */
-let RS_TODAS = false, RS_ORDEN = 'surtido';
-const dinero = v => (v===null||v===undefined) ? '—' : (v>=1e6 ? '$'+(v/1e6).toFixed(1).replace('.',',')+' M' : clp(v));
+let RS_TODAS = false, RS_ORDEN = 'surtido', RS_FILAS = null;
+const dinero = v => (v===null||v===undefined) ? '—' : (v>=1e6 ? '$'+(v/1e6).toFixed(1).replace('.',',')+' M' : (v>=1e4 ? '$'+NF.format(Math.round(v/1e3))+' mil' : clp(v)));
 function pintarResumenStock(filas){
   const cont = $('resumenStock');
+  RS_FILAS = filas;
   const vacio = () => { cont.hidden = true; cont.innerHTML = ''; };
   if (!estado.zona || !filas.length){ vacio(); return; }
 
@@ -1548,7 +1547,9 @@ function pintarResumenStock(filas){
   if (!grupos.length){ vacio(); return; }
   const tot = grupos.reduce((s,g)=>({n:s.n+g.n, u:s.u+g.u, vr:s.vr+g.vr, vn:s.vn+g.vn}), {n:0,u:0,vr:0,vn:0});
   const maxC = clave(grupos[0]) || 1;
-  const LIM = matchMedia('(max-width:640px)').matches ? 3 : 6;
+  /* tiendas visibles: 3 en móvil; en escritorio 2 filas completas según las columnas que caben (mismo tamaño de tarjeta) */
+  const columnas = Math.max(2, Math.floor((Math.min(window.innerWidth - 64, 3000) - 44) / 282));
+  const LIM = matchMedia('(max-width:640px)').matches ? 3 : Math.max(6, columnas * 2);
   const visibles = RS_TODAS ? grupos : grupos.slice(0, LIM);
   const conOtros = !!(estado.stock || estado.subcat || estado.q || estado.marcaVeh || estado.modelo || estado.anio);
   const ORD = [['surtido','Mayor surtido'],['unidades','Más unidades'],['valor','Mayor valor']];
@@ -1747,8 +1748,24 @@ function tarjetaDestacadoHtml(d, i){
   </div>`;
 }
 
+/* Cuántas tarjetas caben en la Vista rápida: 5 en pantallas normales, más si hay ancho de sobra (tarjetas del mismo tamaño). */
+let VR_N = 5;
+function nVistaRapida(){
+  if (matchMedia('(max-width:640px)').matches) return 5;
+  const disponible = Math.min(window.innerWidth - 64, 3000) - 100;
+  return Math.max(5, Math.min(14, Math.floor(disponible / 254)));
+}
+/* al cambiar el ancho de la ventana se reacomodan la Vista rápida y el resumen de zona (en móvil el alto cambia al hacer scroll: se ignora) */
+let _vrT, _vrAncho = window.innerWidth;
+window.addEventListener('resize', () => { clearTimeout(_vrT); _vrT = setTimeout(() => {
+  if (window.innerWidth === _vrAncho) return;
+  _vrAncho = window.innerWidth;
+  pintarVistaRapida(filtrar());
+  if (RS_FILAS) pintarResumenStock(RS_FILAS);
+}, 150); });
 function pintarVistaRapida(filas){
-  const destacados = seleccionarTopStock(filas, 5);
+  VR_N = nVistaRapida();
+  const destacados = seleccionarTopStock(filas, VR_N);
   if (MOSTRAR_DEBUG_VISTA_RAPIDA){
     console.debug('[Vista rápida] filtros activos:', JSON.parse(JSON.stringify(estado)));
   }
@@ -1782,6 +1799,10 @@ function pintarVistaRapida(filas){
       agregarASeleccion(destacados[+btn.dataset.i]);
     });
   });
+  /* si todas las tarjetas caben, no hace falta la flecha ni el desvanecido del borde */
+  const c = $('vrCarrusel'), cabe = c.scrollWidth <= c.clientWidth + 2;
+  $('vrSiguiente').hidden = cabe;
+  c.parentElement.classList.toggle('vr-cabe', cabe);
 }
 $('vrSiguiente').addEventListener('click', ()=>{
   $('vrCarrusel').scrollBy({left: 220, behavior:'smooth'});
