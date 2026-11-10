@@ -700,6 +700,182 @@ thead th{font-weight:600}
 .chip-subcat{background:var(--naranja-suave);color:var(--rojo);font-weight:600}
 .chip-tienda{font-weight:600}
 tbody tr.fila-prod:hover td{background:var(--naranja-suave)}
+
+/* =====================================================================
+   Ajustes v2 (2026-11-10): barra superior flotante, todos los productos sin filtros,
+   Vista rápida en tarjeta cerrada, detalle sin cortes, filtro de stock + resumen por tienda y pulido móvil.
+   ===================================================================== */
+
+/* ---------- Barra superior: tarjeta con las cuatro esquinas redondeadas (como el panel) ---------- */
+.topbar{background:transparent;border:0;box-shadow:none;border-radius:0;padding:14px 20px 0;position:sticky;top:0;z-index:40}
+.topbar-fila{
+  max-width:1140px;margin:0 auto;padding:10px 12px 10px 22px;gap:14px;flex-wrap:nowrap;
+  background:var(--superficie);border-radius:30px;box-shadow:var(--sombra-panel);
+}
+.topbar-meta{white-space:nowrap}
+.btn-tema{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 16px}
+.btn-mi-seleccion{min-height:40px;padding:0 16px}
+@media(max-width:640px){
+  .topbar{padding:10px 12px 0}
+  .topbar-fila{padding:8px 10px 8px 14px;gap:8px;border-radius:26px}
+  .wordmark img{height:26px}
+  .wordmark{margin-right:auto}
+  .btn-tema,.btn-mi-seleccion{min-height:40px;margin-left:0;order:0}
+  .btn-tema{width:40px;padding:0;justify-content:center}
+  .btn-tema .txt-tema{display:none}
+  .btn-mi-seleccion{padding:0 14px}
+}
+@media(max-width:380px){ .btn-mi-seleccion .txt-sel{display:none} .btn-mi-seleccion{width:40px;padding:0;justify-content:center;position:relative} .badge-seleccion{position:absolute;top:-4px;right:-4px} }
+
+/* ---------- Filtros (4 columnas: Zona, Tienda, Subcategoría, Stock) ---------- */
+.fila-filtros.cuatro{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.fila-filtros.cuatro{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.fila-filtros.cuatro{grid-template-columns:1fr;gap:12px}}
+.icono-svg-campo{flex:0 0 auto;color:var(--tenue)}
+.campo-icono{font-weight:600}
+@media(max-width:640px){
+  .hero{padding:18px 0 0}
+  .hero h1{font-size:27px;margin-bottom:10px}
+  .hero p{font-size:14.5px}
+  .hero .paso{width:100%;justify-content:center;margin-top:16px}
+  .hero-ilustracion-caja{max-height:150px;overflow:hidden;margin:0 0 4px}
+  .hero-ilustracion-caja img{max-height:150px;object-fit:contain}
+  .beneficios{grid-template-columns:1fr;gap:8px;margin-top:16px}
+  .beneficio{padding:11px 14px}
+  .beneficio img{max-width:28px;max-height:28px}
+  .tarjeta-filtros{padding:16px 14px 14px;border-radius:24px;margin-top:18px}
+  select,input[type="search"]{min-height:46px;font-size:15px}
+}
+
+/* ---------- Vista rápida: una sola tarjeta cerrada ---------- */
+.vista-rapida{max-width:1180px;margin:18px auto 0;padding:0 20px}
+.vr-caja{background:var(--superficie);border-radius:28px;box-shadow:var(--sombra-panel);padding:22px 24px 20px;position:relative;overflow:hidden}
+.vr-cabeza{margin-bottom:14px}
+.vr-ver-todos{background:var(--naranja-suave);border-radius:999px;padding:8px 14px;font-weight:600}
+.vr-ver-todos:hover{text-decoration:none;background:var(--rojo);color:#fff}
+.vr-carrusel{gap:14px;padding:2px 2px 12px;scroll-padding-left:2px}
+.vr-tarjeta{flex:0 0 clamp(188px,calc((100% - 56px) / 5),240px);width:auto;background:var(--zebra);border:1px solid var(--borde);border-radius:22px}
+.vr-tarjeta:hover{box-shadow:0 10px 24px rgba(90,30,35,.10)}
+.vr-agregar{border-radius:999px}
+.vr-siguiente{right:2px;box-shadow:var(--sombra-panel)}
+.vr-carrusel-caja::after{content:"";position:absolute;top:0;right:0;bottom:12px;width:44px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--superficie));border-radius:0 22px 22px 0}
+@media(max-width:640px){
+  .vista-rapida{padding:0 12px;margin-top:14px}
+  .vr-caja{padding:16px 14px 12px;border-radius:24px}
+  .vr-cabeza{gap:8px}
+  .vr-titulo{flex:1 1 60%}
+  .vr-ver-todos{padding:7px 12px;font-size:12.5px}
+  .vr-carrusel{scroll-snap-type:x mandatory;gap:10px;margin:0 -14px;padding:2px 14px 12px;scroll-padding-left:14px}
+  .vr-tarjeta{flex:0 0 78%;max-width:280px}
+  .vr-carrusel-caja::after{display:none}
+}
+
+/* ---------- Resultados: tabla sin cortes y detalle completo ---------- */
+.tabla-caja{border-radius:24px;overflow-x:auto}
+thead th{padding:13px 12px}
+tbody td{padding:13px 12px}
+td.desc{min-width:170px}
+.chip-subcat,.chip-tienda{white-space:normal;line-height:1.25}
+.chip-tienda{max-width:170px}
+tbody tr.fila-detalle td{padding:0}
+.detalle-wrap{position:sticky;left:0;width:var(--cw,100%);max-width:100%;box-sizing:border-box;padding:16px 20px 18px}
+.detalle-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px 24px;padding:0}
+.detalle-valor{overflow-wrap:anywhere}
+.btn-detalle-fila{white-space:nowrap}
+
+/* tarjetas móviles */
+.tarjeta-prod{border:0;box-shadow:var(--sombra-panel);border-radius:22px;padding:16px}
+.tp-detalle-btn{background:var(--zebra);border-radius:999px;padding:0 14px;margin-top:8px;min-height:36px;font-weight:600}
+.tp-detalle{background:var(--zebra);border:0;border-radius:16px;padding:12px 14px;margin-top:8px;overflow-wrap:anywhere;line-height:1.5}
+.tp-detalle b{color:var(--tenue);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:1px}
+.tp-detalle div+div{margin-top:9px}
+.btn-agregar-tarjeta{border-radius:999px;min-height:44px}
+.panel-detalle{border-radius:28px 0 0 28px}
+.panel-grid .valor{overflow-wrap:anywhere}
+.panel-cta,.panel-cta-secundario{border-radius:999px}
+@media(max-width:640px){
+  .panel-fondo{align-items:flex-end}
+  .panel-detalle{width:100%;height:auto;max-height:92%;border-radius:28px 28px 0 0;padding:20px 18px 28px;animation:panel-sube .2s ease-out}
+  .panel-icono{height:72px;margin:4px 0 10px}
+  .panel-grid{grid-template-columns:1fr}
+}
+@keyframes panel-sube{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* controles de orden y paginación */
+.controles-orden{gap:8px}
+.paginas button{border-radius:999px;border:0;box-shadow:var(--sombra-panel)}
+@media(max-width:640px){
+  .controles-orden{flex-wrap:wrap}
+  .controles-orden > label.campo{flex:1 1 100%}
+  .controles-orden select{width:100%}
+  #fSentido{max-width:none;flex:1 1 100%}
+  .barra-resultados .btn.primario{width:100%;justify-content:center}
+  .paginas{justify-content:center;gap:8px}
+  .paginas .sep{flex:0 0 100%;height:0}
+  .paginas button[data-p="1"]{display:none}
+  .seccion{padding:18px 12px 44px}
+}
+
+/* ---------- Resumen de stock por tienda ---------- */
+.resumen-stock{background:var(--superficie);border-radius:28px;box-shadow:var(--sombra-panel);padding:20px 22px 18px;margin-bottom:20px}
+.rs-cabeza{display:flex;align-items:flex-start;justify-content:space-between;gap:14px 20px;flex-wrap:wrap;margin-bottom:16px}
+.rs-titulo{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rs-titulo b{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.rs-titulo span{font-size:12.5px;color:var(--tenue)}
+.rs-kpis{display:flex;gap:10px}
+.rs-kpis > div{background:var(--naranja-suave);border-radius:18px;padding:8px 14px;display:flex;flex-direction:column;min-width:86px}
+.rs-kpis b{font-size:18px;font-weight:700;color:var(--rojo);line-height:1.15}
+.rs-kpis span{font-size:11.5px;color:var(--tinta-2)}
+.rs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.rs-tienda{
+  appearance:none;text-align:left;cursor:pointer;border:1px solid var(--borde);background:var(--zebra);border-radius:22px;
+  padding:14px 16px 12px;display:flex;flex-direction:column;gap:8px;min-width:0;color:inherit;
+  transition:border-color .15s,box-shadow .15s,transform .1s;
+}
+.rs-tienda:hover{border-color:var(--rojo);box-shadow:0 10px 24px rgba(90,30,35,.10);transform:translateY(-1px)}
+.rs-fila1{display:flex;align-items:center;gap:8px;min-width:0}
+.rs-pos{flex:0 0 auto;width:24px;height:24px;border-radius:50%;background:var(--rojo);color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.rs-nombre{font-weight:700;font-size:14.5px;line-height:1.25;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs-cifras{font-size:13px;color:var(--tinta-2)}
+.rs-cifras b{font-size:18px;color:var(--tinta);font-weight:700;margin-right:2px}
+.rs-barra{display:block;height:6px;border-radius:999px;background:var(--naranja-suave);overflow:hidden}
+.rs-barra i{display:block;height:100%;border-radius:999px;background:var(--rojo)}
+.rs-top{display:flex;flex-direction:column;gap:4px;border-top:1px dashed var(--borde-fuerte);padding-top:8px}
+.rs-item{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--tinta-2);line-height:1.3}
+.rs-item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs-item b{flex:0 0 auto;color:#1D8A3D;font-weight:700}
+:root[data-theme="dark"] .rs-item b{color:#5FCB7E}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rs-item b{color:#5FCB7E}}
+.rs-accion{font-size:12px;font-weight:600;color:var(--rojo);margin-top:2px}
+.rs-mas{appearance:none;margin:14px auto 0;display:block;background:var(--naranja-suave);color:var(--rojo);border:0;border-radius:999px;padding:10px 20px;font-weight:600;font-size:13.5px;cursor:pointer}
+.rs-mas:hover{background:var(--rojo);color:#fff}
+@media(max-width:640px){
+  .resumen-stock{padding:16px 14px 14px;border-radius:24px;margin-bottom:16px}
+  .rs-kpis{width:100%}
+  .rs-kpis > div{flex:1;min-width:0;padding:8px 10px}
+  .rs-grid{grid-template-columns:1fr}
+}
+
+/* ---------- Mensajes, ayuda y pie en móvil ---------- */
+.ayuda-pasos{border:0;box-shadow:var(--sombra-panel);border-radius:24px}
+.mensaje{border-radius:18px}
+@media(max-width:640px){
+  .mensajes{padding:0 12px}
+  .envoltura{padding:0 12px}
+  .ayuda-pasos{padding:18px 18px}
+  .footer-interior{flex-direction:column;align-items:flex-start}
+}
+footer{border-top:0}
+.controles-orden label.campo > span{white-space:nowrap}
+.topbar{padding-bottom:10px;background:linear-gradient(var(--plano) 60%,transparent)}
+@media(max-width:640px){
+  .fila-botones-filtro .btn-mas-filtros{flex:0 0 auto;min-height:46px;padding:10px 16px;line-height:1.25;border-radius:24px}
+  .topbar{padding-bottom:8px}
+  .controles-orden label.campo select{flex:1;min-width:0;width:auto}
+  #fSentido{max-width:none !important;width:100%}
+  .vr-carrusel{scrollbar-width:none}
+  .vr-carrusel::-webkit-scrollbar{display:none}
+}
 </style>
 </head>
 <body>
@@ -712,10 +888,10 @@ tbody tr.fila-prod:hover td{background:var(--naranja-suave)}
       <div class="topbar-meta" id="meta-datos">&nbsp;</div>
       <button class="btn-mi-seleccion" id="btnMiSeleccion" type="button" aria-haspopup="dialog">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="6" y="3" width="12" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 3h6v3H9z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 11h6M9 15h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Mi selección
+        <span class="txt-sel">Mi selección</span>
         <span class="badge-seleccion" id="badgeSeleccion" hidden>0</span>
       </button>
-      <button class="btn-tema" id="btnTema" type="button">Tema</button>
+      <button class="btn-tema" id="btnTema" type="button" aria-label="Cambiar entre tema claro y oscuro"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="txt-tema">Tema</span></button>
     </div>
   </header>
 
@@ -725,10 +901,10 @@ tbody tr.fila-prod:hover td{background:var(--naranja-suave)}
       <div class="hero-interior">
         <div class="hero-texto">
           <h1>Liquidación de <span class="acento">Productos</span> en Obsolescencia</h1>
-          <p>Consulta los productos disponibles para liquidación según tu zona; acota por tienda y subcategoría si quieres. Encuentra oportunidades y optimiza tu inventario.</p>
+          <p>Explora todos los productos disponibles para liquidación o acótalos por zona, tienda, subcategoría o nivel de stock. Encuentra oportunidades y optimiza tu inventario.</p>
           <button class="paso" id="paso-actual" type="button">
             <img class="icono-tecnico icono-paso" src="data:image/png;base64,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" alt="">
-            <span id="paso-actual-texto">Selecciona tu zona para comenzar</span>
+            <span id="paso-actual-texto">Explora todos los productos</span>
           </button>
 
           <div class="beneficios">
@@ -763,20 +939,31 @@ tbody tr.fila-prod:hover td{background:var(--naranja-suave)}
 
     <div class="envoltura">
       <div class="tarjeta-filtros">
-        <div class="fila-filtros">
+        <div class="fila-filtros cuatro">
           <div class="campo">
             <label for="fZona" class="campo-icono"><img class="icono-tecnico" src="data:image/png;base64,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" alt="">Zona</label>
             <select id="fZona"></select>
           </div>
           <div class="campo">
             <label for="fTienda" class="campo-icono"><img class="icono-tecnico" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGgAAABgCAMAAADGkcf+AAAAwFBMVEUmGRlUHh3mHSHh39/WpaJfX1+bERGfnZ3Tamry7+++vsDTvsFAQD4/QEA+QD7uPkB+foB+gH6+wsLhwL3ahHucfXzvfYB/gYC/wL8+P0Du8PKAgH/9/f0JCQkVFRW3t7cpKSl4eXjHx8fzBgo3NzeZmZmmpqdISEjZ2dplZWWFhYXl4+NZWVrp5+fs6urzFRb08fDj4ODx7e3tJifrVlf2x8jsR0fsZ2f52NjyqafvdnXrNDLwk5L2trewCQ3vh4oQSTZxAAAAQHRSTlP////c//////88/////////////////////0b/AP//////////////+v//sv+Ibv8uzk////////z/////////Sb+uDAAABfdJREFUeNrtmoly2zgMQOUjZ5P03u4hUpSo09ZlOUnTOHH+/68W1AnQtuxsXKc7DSYzNSiSTwQBCJRqmAcS4w30Bnp9kOODnHiNnHh+Kydd8yY5afpaxRaQwxkWw2BVA+f0gq4zY0D1KO8HBTCHMAyDl2Iss4EQhgCBJmO5rNu5Afrx8aDRQD3OjitFdVb/Or0ghzFhOa2cSjm2WgHta20YkPEiO3XK9j8d5zN0nY8/nTcDbcYmvSCtw7WcI1v/kPKx06bvs+8mvpjddFoomFv0gBKXc2Tb6Vxeo6sPUnZznSW3Gb74WcoHsxmbmxFjfg/I4jxG6k0GgwnortOKa3mbdurdQt6iNViMxWebQTG9D2oO80kO76hdp0TN0NU8YDzcCArBZ/DYezrVvRyOkPqdch8yvIOmx/lkI2gC7o/1W3lr0pkpV95QO9/jmxY82ARKwRXwctNMYr8C4wxTYkkCMhf0tiLGrQ0gh9ObAHf+oS0wp77xjt7HPMGOxXi0AQRB5FFTYS8z8wVx9pX7eJLZOxoqIlwLmnHqKDDxHK+gWFBLas5vPkqqgzt4a0EeuD7ueEd310znVL+byz+0/mTF1B06UHHJGEmEj1mG/TUH3yATw4oJuHhP/Z26g4EfEMQVIDDmM5KfMvlkUucgplT+/kjyDI4WAwcRzU7XGXEy805qoGuS7ErvIB3SK7TpLagQTJCcYc4zesOQNsek4Xt2S9JZQnNwueveCkh3BdgibQE/NMuY98NFqtlyUWxyhwaUu5xZphZFJPBXMoH5ZU43EYZktMcRax+0RpcV3FxzZjnrJz8M57RhLLOxiWfxGbM1kMc4yQrmjZTvaX1xSp4DypbU/1fyKjw53XbjGxDkU6+rDixfFQjXnerD3xDuF7X4/hcpTy0s47lcjD/hlpg3rlyD0pXyaSClVkAt5dCgFZbMVrroLbyxXQ1KAOQOgiC4cmsZQDXlYrkYLAeDK+hy2XZZLpsuf11cXFxeDQbL48FFEKBRvInZbkXUuZW7Uy80BeN/68Um3VdVktBybibY0RYQJAorJ/EIZWGK3SO3OC3ech2Uq7Ir1kHBKkhbkQZSuYyAClXcfDJpyGqgM9iiVLcCrTWhcqF1jbJupJWFer481/fIDPRiWYDHJGSJXN+SS8ZperRUcU8i1maae6vHYYAGTePyRIAylwMOxAW6mcJWARGj7BG6yp89tLE+b3OQ0bkHlPf1xLkTcCagJW4mTnxYD9SE3KtXmYcxFIEQ5q6Vtl0YgwYeNzecKCNM9OxtwbzMjezJxI4Aw4QDTsV4AA2TSaQmiBIbBorYtqsuXFjlGtzoW9kFgjMIPXVwiatBEA/cXn3whepoxJszlrKj45ZKKaysOz1eX1YNqks1qBylTA2Ls1zeifDWFSe5H9QTi6jawdSLXXUqEyKwKyOGdlBN4dZdTD8W1fEriKpwKHw1qMJM11ZBea58JARB1xOlh7POK4qyIUQOOS0bRiltcQTbWBIrZ7SAt4czeFFMt4L2InmRHAYENv+9QB8ZOz8IaKI/t14gaT+I7xHEDwRyfzmQ9cH+ADnYxtJdnTYXPpIOkfVskMXa1N29OnPPulcfKEnjOs55LshjeKpGpqhSwaSOZ/0HkOdQiTCIuc6q2F189IL+oSA9S9gMg4I1HjDBoN4UxM9/BdCEgNwtoP6k2p3X14C+7hHErJ1NtwWU7Alk/GRQW5fytaCP3aAXgkb9pkMT7LxHJ/S9Xg0KDw/iwZ5A3iuCokOAfDs8CCiP4cUKBbndhyWv+cgU7A4671/RaP3zCD2Zdo2jd92pkO5RTuPIXvluVR9nRi8FaZmhaN8I+eR1UGjuGfTi2nsLaLr/kvg1QR9+Dmg1M0yeB9q53HoZaEuRz5wdi5NfB9RrOvv/CdqSvasXI7PppH6LAr+VjOAHxJGTpGnSyLSTss+s+jUajXZ4c1J+Uxf1h3VBRbW0r3/FNmH9cbRGtFPQypFI79mq8UZQ+i1uJFLS/mgF60dHZc+jo0pBF6phdvj2n1veQL8J6F+2ToYD8S5FPAAAAABJRU5ErkJggg==" alt="">Tienda</label>
-            <select id="fTienda" disabled></select>
-            <span class="ayuda" id="ayuda-tienda">Selecciona primero tu zona</span>
+            <select id="fTienda"></select>
           </div>
           <div class="campo">
             <label for="fSubcat" class="campo-icono"><img class="icono-tecnico" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFYAAABbCAMAAADeFoIbAAAAwFBMVEX9/f0ICAgWFhbwBQfV1tY4ODiGhobyFRWztLNGRkaYl5jq6upWV1arrKskJCTvSUf3ubj1l5Tt7e372drp5+fzVlTz8PB6enrHx8f0iYlnZ2fy7+/4w8MgIB/uJSX0ZmP4qaz0Yl35wL3q5OXsP0HyenchHRvg4eH5oZxfXWBAP0A/QEA+QD8/P0D84t7sOTYfIB/73uP3v8LyeYDoHCHf3+HaBgmgoZ+fn6Dg3+BAQD9APz8fISAAAAAAAAAAAADepf28AAAAQHRSTlMA/////v///////23///////9Q/Ij/Lf////88/////////6f////N////////5v//5v///9z////c////AAAAAmmeeQAAAvlJREFUeNrtmXl7ojAQxs0AQjgiInIqumqvbbft3uf3/1w7rHIF4gMWdrfPw/tHa+T15xgyyYxOJqNGvWJ52+Us1+FwyB8vr3YVo/vNpJS+U8r6M6JRUKO6S0lSRQpLxhtKoK41e76+Bpjy2A1Sn2a8lqkSVd3mvthEKkZL7/NQ6UkK4q0qdaFKn2zDyWckjj0vG8xVKVlkA4sAC/CS5zmOYxj4x8mMjg6gVLFXkhQKpx0v5uFisJbQaAJolSdwZldCt63m72k8EMUVGi1CdB67aIVViOK0x256wWoEumHnl0X7pgPW6Glud8Ng7cGxDu00t/8e+zMeBPvWO4OFv4JtvW7vieK1z7Iu6eD1lLyrtsn7IqzR0ySs2mcZXJ68bv/r1lUGOR36xG6lllhtGOxLomVup0PHnniC/JlL5SMSAiHWJ1ydsFLV2aPA/CGRvtjFKwmVRcEy4DN7qapJeHs7TxWG85LCRJKWecLKDCuiqZ5pWhLWNISv7RZPkliz96W7jVzSLIC7Wga6m+RYdZ5QRRmafNyXjbLJTtVnFYmf4mvTzXm0q9qtVrsd/q8tEVmzLK2uwBubj1Gjzkr2KSfzKN0VGc1Mx6G+r0Edv57nWRfKynvzPgL+ev4qxWrYgRt62TUKseUOLyoZr9fsqBMb+C3+Bq/ocqOCCMFy6RQ8Z6RVrA7EP9NzEq0ItrZVF202BaieHOgWH1FWsevjWcZkoVHnj0jEit1aBdul0zE7YJ1hsPEgWDoA1nkg1Gtfg7XG0mGwP85juWocV3wPK+F/xBoj9nzvAJcnr9v/uu3YknTBGq8K29t+S1pitaGwXRaYRQbZEzhsh68psAKyJk7TToodq19MWUzJukNziuGzz+JgiyJiSoC6whUDjHuKEsIi35/W5KelXJR/Dhl/BqCZzU+VG7E55eZgMgnSgk3QdBKTM4p6U3JXO5XlCKu7ovyD04A9A51W6tYgYtWyMnX9Sh9QveluGs2FoFy7kd+DIGgyjq3HqJp+A4TTQI9wtOYOAAAAAElFTkSuQmCC" alt="">Subcategoría</label>
-            <select id="fSubcat" disabled></select>
-            <span class="ayuda" id="ayuda-subcat">Selecciona primero tu zona</span>
+            <select id="fSubcat"></select>
+          </div>
+          <div class="campo">
+            <label for="fStock" class="campo-icono"><svg class="icono-svg-campo" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 8l9-5 9 5v8l-9 5-9-5V8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M3 8l9 5 9-5M12 13v8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Stock</label>
+            <select id="fStock">
+              <option value="">Todos los niveles</option>
+              <option value="1">Con stock (1 o más)</option>
+              <option value="3">3 o más unidades</option>
+              <option value="5">5 o más unidades</option>
+              <option value="10">10 o más unidades</option>
+              <option value="25">25 o más unidades</option>
+              <option value="50">50 o más unidades</option>
+              <option value="100">100 o más unidades</option>
+            </select>
           </div>
         </div>
 
@@ -793,15 +980,15 @@ tbody tr.fila-prod:hover td{background:var(--naranja-suave)}
           <div class="fila-filtros fila-aplicacion">
             <div class="campo">
               <label for="fMarcaVeh">Marca del vehículo</label>
-              <select id="fMarcaVeh" disabled></select>
+              <select id="fMarcaVeh"></select>
             </div>
             <div class="campo">
               <label for="fModelo">Modelo</label>
-              <select id="fModelo" disabled></select>
+              <select id="fModelo"></select>
             </div>
             <div class="campo">
               <label for="fAnio">Año</label>
-              <select id="fAnio" disabled></select>
+              <select id="fAnio"></select>
             </div>
           </div>
         </div>
@@ -825,6 +1012,7 @@ tbody tr.fila-prod:hover td{background:var(--naranja-suave)}
     <div class="mensajes" id="mensajes"></div>
 
     <div class="vista-rapida" id="vistaRapida">
+     <div class="vr-caja">
       <div class="vr-cabeza">
         <img class="icono-tecnico" src="data:image/png;base64,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" alt="">
         <div class="vr-titulo">
@@ -842,9 +1030,11 @@ tbody tr.fila-prod:hover td{background:var(--naranja-suave)}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
+     </div>
     </div>
 
     <div class="seccion" id="zona-resultados" hidden>
+      <div class="resumen-stock" id="resumenStock" hidden></div>
       <div class="controles-orden">
         <label class="campo" style="flex-direction:row;align-items:center;gap:8px">
           <span style="text-transform:none;font-weight:600;color:var(--tinta-2)">Ordenar por</span>
@@ -897,10 +1087,11 @@ tbody tr.fila-prod:hover td{background:var(--naranja-suave)}
       <div class="ayuda-pasos">
         <h3>¿Cómo funciona?</h3>
         <ol>
-          <li>Selecciona tu zona (verás los productos de todas sus tiendas).</li>
-          <li>Si quieres acotar, elige una tienda (opcional).</li>
-          <li>Filtra por subcategoría, marca, modelo o año (opcional).</li>
-          <li>Descarga el listado si lo necesitas.</li>
+          <li>Al entrar verás todos los productos. Para acotar, elige tu zona (verás todas sus tiendas).</li>
+          <li>Si quieres, elige una tienda y una subcategoría.</li>
+          <li>Con el filtro de stock verás dónde hay más unidades y un resumen por tienda.</li>
+          <li>Filtra por marca, modelo o año del vehículo, o busca por código/SKU.</li>
+          <li>Descarga el listado de tu zona si lo necesitas.</li>
         </ol>
       </div>
     </div>
@@ -961,7 +1152,7 @@ function aniosDeFila(f){
 }
 
 const estado = {
-  zona:'', tienda:'', subcat:'', marcaVeh:'', modelo:'', anio:'', q:'',
+  zona:'', tienda:'', subcat:'', marcaVeh:'', modelo:'', anio:'', q:'', stock:'',
   orden:'remate', sentido:'desc', pagina:1,
 };
 const PORPAGINA = 40;
@@ -974,6 +1165,7 @@ function filtrar(omitir){
   const mvi = (omitir!=='marcaVeh' && estado.marcaVeh) ? D.marcasVehiculo.indexOf(estado.marcaVeh) : -1;
   const moi = (omitir!=='modelo' && estado.modelo) ? D.modelos.indexOf(estado.modelo) : -1;
   const anioSel = (omitir!=='anio' && estado.anio) ? +estado.anio : null;
+  const minStock = (omitir!=='stock' && estado.stock) ? +estado.stock : null;
   const toks = estado.q ? norm(estado.q).split(/\s+/).filter(Boolean) : null;
   const out = [];
   for (let i=0;i<D.filas.length;i++){
@@ -984,6 +1176,7 @@ function filtrar(omitir){
     if (mvi>=0 && f[MV]!==mvi) continue;
     if (moi>=0 && f[MO]!==moi) continue;
     if (anioSel!==null && !aniosDeFila(f).includes(anioSel)) continue;
+    if (minStock!==null && !(f[ST]>=minStock)) continue;
     if (toks){ const s=busqueda[i]; let ok=true; for(const t of toks){ if(!s.includes(t)){ok=false;break;} } if(!ok) continue; }
     out.push(f);
   }
@@ -995,25 +1188,21 @@ function opcionesTienda(){
   return D.tiendas.filter((_,i)=>vistos.has(i));
 }
 function opcionesSubcat(){
-  if (!estado.zona) return [];
   const base = filtrar('subcat');
   const vistos = new Set(base.map(f=>f[SC]));
   return D.subcats.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
 }
 function opcionesMarcaVeh(){
-  if (!estado.zona) return [];
   const base = filtrar('marcaVeh');
   const vistos = new Set(base.map(f=>f[MV]).filter(i=>i>=0));
   return D.marcasVehiculo.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
 }
 function opcionesModelo(){
-  if (!estado.zona) return [];
   const base = filtrar('modelo');
   const vistos = new Set(base.map(f=>f[MO]).filter(i=>i>=0));
   return D.modelos.filter((_,i)=>vistos.has(i)).sort((a,b)=>a.localeCompare(b,'es'));
 }
 function opcionesAnio(){
-  if (!estado.zona) return [];
   const base = filtrar('anio');
   const anios = new Set();
   base.forEach(f => aniosDeFila(f).forEach(a => anios.add(a)));
@@ -1033,31 +1222,24 @@ function mensajeHtml(texto, tipo, icono){
 }
 function pintarMensajes(filas){
   const msgs = [];
-  const desbloqueado = !!estado.zona;
-  if (!estado.zona && estado.q){
-    if (filas.length){
-      const nTiendas = new Set(filas.map(f=>f[T])).size;
-      msgs.push(mensajeHtml(`Buscando «${esc(estado.q)}» en <b>todas las zonas</b> (${nTiendas} ${nTiendas===1?'tienda':'tiendas'} con resultados). Selecciona una <b>zona</b> para acotar y ver más filtros.`, 'dato', 'ℹ️'));
-    } else {
-      msgs.push(mensajeHtml(`La búsqueda «${esc(estado.q)}» no encontró productos en ninguna zona.`, 'aviso', '⚠️'));
+  const lugar = estado.tienda || estado.zona || 'todas las zonas';
+  const hayFiltro = !!(estado.zona || estado.tienda || estado.subcat || estado.marcaVeh || estado.modelo || estado.anio || estado.q || estado.stock);
+  if (filas.length){
+    const nTiendas = new Set(filas.map(f=>f[T])).size;
+    if (!hayFiltro){
+      msgs.push(mensajeHtml(`Mostrando <b>todos los productos</b> en liquidación (${num(filas.length)} registros en ${nTiendas} tiendas). Usa los filtros para acotar por zona, tienda, subcategoría o stock.`, 'dato', 'ℹ️'));
+    } else if (!estado.zona && !estado.tienda){
+      msgs.push(mensajeHtml(`Mostrando resultados de <b>todas las zonas</b> (${nTiendas} ${nTiendas===1?'tienda':'tiendas'} con resultados). Elige una <b>zona</b> para acotar.`, 'dato', 'ℹ️'));
+    } else if (estado.zona && !estado.tienda){
+      msgs.push(mensajeHtml(`Mostrando productos de <b>toda ${esc(estado.zona)}</b> (${nTiendas} ${nTiendas===1?'tienda':'tiendas'}). Elige una <b>tienda</b> para acotar.`, 'dato', 'ℹ️'));
     }
-  } else if (!estado.zona){
-    msgs.push(mensajeHtml('Selecciona una <b>zona</b> para ver los productos disponibles, o busca directo por código/SKU.', 'dato', 'ℹ️'));
-  } else if (!estado.tienda){
-    const n = opcionesTienda().length;
-    msgs.push(mensajeHtml(`Mostrando productos de <b>toda ${esc(estado.zona)}</b> (${n} ${n===1?'tienda':'tiendas'}). Selecciona una <b>tienda</b> para acotar.`, 'dato', 'ℹ️'));
-  }
-  if (desbloqueado){
-    const lugar = estado.tienda || estado.zona;
     const sinPrecio = filas.filter(f=>f[VR]===null).length;
     if (sinPrecio) msgs.push(mensajeHtml(`<b>${num(sinPrecio)}</b> producto(s) sin valor remate se muestran como «Precio pendiente».`, 'aviso', '⚠️'));
-    if (!estado.subcat && !estado.q && filas.length===0){
-      msgs.push(mensajeHtml(`<b>${esc(lugar)}</b> no tiene productos en liquidación en este momento.`, 'aviso', '⚠️'));
-    } else if (estado.subcat && filas.length===0){
-      msgs.push(mensajeHtml(`No hay productos de <b>${esc(estado.subcat)}</b> en ${esc(lugar)}. Prueba otra subcategoría o usa «Ver todas las subcategorías».`, 'aviso', '⚠️'));
-    } else if (estado.q && filas.length===0){
-      msgs.push(mensajeHtml(`La búsqueda «${esc(estado.q)}» no encontró productos en ${esc(lugar)}.`, 'aviso', '⚠️'));
-    }
+  } else if (hayFiltro){
+    const motivo = estado.q ? `La búsqueda «${esc(estado.q)}»` : (estado.subcat ? `La subcategoría <b>${esc(estado.subcat)}</b>` : 'Esta combinación de filtros');
+    msgs.push(mensajeHtml(`${motivo} no encontró productos en ${esc(lugar)}. Prueba quitando algún filtro o usa «Limpiar filtros».`, 'aviso', '⚠️'));
+  } else {
+    msgs.push(mensajeHtml('No hay productos en liquidación en este momento.', 'aviso', '⚠️'));
   }
   $('mensajes').innerHTML = msgs.join('');
 }
@@ -1127,9 +1309,9 @@ function filaTablaHtml(f, mostrarSubcat, mostrarTienda, i){
   </tr>
   <tr class="fila-detalle${clasePar}" id="fila-det-${i}" hidden>
     <td colspan="${colspan}">
-      <div class="detalle-grid">
+      <div class="detalle-wrap"><div class="detalle-grid">
         ${campos.map(([l,v])=>`<div><span class="detalle-label">${esc(l)}</span><span class="detalle-valor">${v}</span></div>`).join('')}
-      </div>
+      </div></div>
     </td>
   </tr>`;
 }
@@ -1171,6 +1353,14 @@ function tarjetaProdHtml(f, i, mostrarTienda){
 
 let FILTRADAS = [];
 
+/* El detalle de una fila vive dentro de la tabla: si la tabla fuera más ancha que su caja (scroll horizontal) el detalle
+   quedaba cortado. Se fija su ancho al de la caja visible y se deja anclado a la izquierda. */
+function ajustarAnchoDetalle(){
+  const c = document.querySelector('.tabla-caja');
+  if (c && c.clientWidth) document.documentElement.style.setProperty('--cw', c.clientWidth+'px');
+}
+window.addEventListener('resize', ajustarAnchoDetalle);
+
 function pintarResultados(filas){
   const mostrarSubcat = !estado.subcat;
   const mostrarTienda = !estado.tienda;
@@ -1202,6 +1392,7 @@ function pintarResultados(filas){
     agregarASeleccion(filaAItem(FILTRADAS[+b.dataset.i]));
   }));
 
+  ajustarAnchoDetalle();
   $('paginas').innerHTML = total>1 ? `
     <button type="button" data-p="1" ${estado.pagina===1?'disabled':''}>« Primera</button>
     <button type="button" data-p="${estado.pagina-1}" ${estado.pagina===1?'disabled':''}>Anterior</button>
@@ -1216,7 +1407,7 @@ function pintarResultados(filas){
 
 function actualizarPaso(){
   const paso = $('paso-actual-texto');
-  if (!estado.zona) paso.textContent = 'Selecciona tu zona para comenzar';
+  if (!estado.zona) paso.textContent = 'Explora todos los productos';
   else if (!estado.subcat) paso.textContent = 'Elige una subcategoría o mira todos los productos';
   else paso.textContent = 'Consultando productos disponibles para liquidación';
 }
@@ -1224,14 +1415,13 @@ function actualizarPaso(){
 function render(){
   const desbloqueadoFiltros = !!estado.zona;
   llenarSelect($('fZona'), D.zonas, estado.zona, false);
-  llenarSelect($('fTienda'), opcionesTienda(), estado.tienda, !estado.zona);
-  llenarSelect($('fSubcat'), opcionesSubcat(), estado.subcat, !desbloqueadoFiltros);
-  llenarSelect($('fMarcaVeh'), opcionesMarcaVeh(), estado.marcaVeh, !desbloqueadoFiltros);
-  llenarSelect($('fModelo'), opcionesModelo(), estado.modelo, !desbloqueadoFiltros);
-  llenarSelect($('fAnio'), opcionesAnio(), estado.anio, !desbloqueadoFiltros);
+  llenarSelect($('fTienda'), opcionesTienda(), estado.tienda, false);
+  llenarSelect($('fSubcat'), opcionesSubcat(), estado.subcat, false);
+  llenarSelect($('fMarcaVeh'), opcionesMarcaVeh(), estado.marcaVeh, false);
+  llenarSelect($('fModelo'), opcionesModelo(), estado.modelo, false);
+  llenarSelect($('fAnio'), opcionesAnio(), estado.anio, false);
   $('fBuscar').value = estado.q;
-  $('ayuda-tienda').style.display = estado.zona ? 'none' : '';
-  $('ayuda-subcat').style.display = desbloqueadoFiltros ? 'none' : '';
+  $('fStock').value = estado.stock;
   $('fOrden').value = estado.orden; $('fSentido').value = estado.sentido;
   actualizarPaso();
 
@@ -1244,7 +1434,8 @@ function render(){
   pintarVistaRapida(filas);
   pintarMensajes(filas);
 
-  const mostrar = (!!estado.zona || !!estado.q) && filas.length>0;
+  const mostrar = filas.length>0;
+  pintarResumenStock(mostrar ? filas : []);
   $('zona-resultados').hidden = !mostrar;
   $('btnTodaTienda').hidden = !(estado.subcat);
 
@@ -1261,7 +1452,7 @@ function render(){
 
   if (mostrar){
     FILTRADAS = ordenar(filas);
-    const detalle = [estado.zona || (estado.q ? 'Todas las zonas' : ''), estado.tienda, estado.subcat,
+    const detalle = [estado.zona || 'Todas las zonas', estado.tienda, estado.subcat, estado.stock ? ('Stock de '+estado.stock+' o más') : '',
                      estado.marcaVeh, estado.modelo, estado.anio?('Año '+estado.anio):'',
                      estado.q?`"${estado.q}"`:''].filter(Boolean).join(' · ');
     $('conteo').innerHTML = `${num(FILTRADAS.length)} ${FILTRADAS.length===1?'producto encontrado':'productos encontrados'}<span>${esc(detalle)}</span>`;
@@ -1271,12 +1462,76 @@ function render(){
   }
 }
 
+/* ---------------- Resumen de stock por tienda ---------------- */
+let RS_TODAS = false;
+function pintarResumenStock(filas){
+  const cont = $('resumenStock');
+  if (!estado.stock || estado.tienda || !filas.length){ cont.hidden = true; cont.innerHTML = ''; return; }
+  const por = new Map();
+  for (const f of filas){
+    if (!(f[ST] > 0)) continue;
+    let g = por.get(f[T]);
+    if (!g){ g = {t:f[T], z:f[Z], n:0, u:0, top:[]}; por.set(f[T], g); }
+    g.n++; g.u += f[ST];
+    if (g.top.length < 3 || f[ST] > g.top[g.top.length-1][ST]){
+      g.top.push(f); g.top.sort((a,b)=>b[ST]-a[ST]); if (g.top.length > 3) g.top.pop();
+    }
+  }
+  const grupos = [...por.values()].sort((a,b)=>b.u-a.u);
+  if (!grupos.length){ cont.hidden = true; cont.innerHTML = ''; return; }
+  const totU = grupos.reduce((s,g)=>s+g.u, 0), totN = grupos.reduce((s,g)=>s+g.n, 0);
+  const maxU = grupos[0].u;
+  const LIM = matchMedia('(max-width:640px)').matches ? 3 : 6;
+  const visibles = RS_TODAS ? grupos : grupos.slice(0, LIM);
+  const lugar = estado.zona || 'todas las zonas';
+  cont.innerHTML = `
+    <div class="rs-cabeza">
+      <div class="rs-titulo"><b>Dónde hay más stock</b><span>${esc(lugar)} · productos con ${num(+estado.stock)} ${+estado.stock===1?'unidad':'unidades'} o más, por tienda</span></div>
+      <div class="rs-kpis">
+        <div><b>${num(grupos.length)}</b><span>${grupos.length===1?'tienda':'tiendas'}</span></div>
+        <div><b>${num(totN)}</b><span>productos</span></div>
+        <div><b>${num(totU)}</b><span>unidades</span></div>
+      </div>
+    </div>
+    <div class="rs-grid">
+      ${visibles.map((g, k) => `<button class="rs-tienda" type="button" data-t="${g.t}" title="Ver solo los productos de esta tienda">
+        <span class="rs-fila1"><span class="rs-pos">${k+1}</span><span class="rs-nombre">${esc(nombreDeTienda(D.tiendas[g.t]))}</span><span class="chip-zona ${claseChipZona(D.zonas[g.z])}">${esc(etiquetaCortaZona(D.zonas[g.z]))}</span></span>
+        <span class="rs-cifras"><b>${num(g.u)}</b> unidades · ${num(g.n)} ${g.n===1?'producto':'productos'}</span>
+        <span class="rs-barra"><i style="width:${Math.max(4, Math.round(g.u/maxU*100))}%"></i></span>
+        <span class="rs-top">${g.top.map(f => `<span class="rs-item"><span>${esc(D.textos[f[X]])}</span><b>${num(f[ST])}</b></span>`).join('')}</span>
+        <span class="rs-accion">Ver solo esta tienda ›</span>
+      </button>`).join('')}
+    </div>
+    ${grupos.length > LIM ? `<button class="rs-mas" id="rsMas" type="button">${RS_TODAS ? 'Mostrar solo las '+LIM+' con más stock' : 'Ver las '+num(grupos.length)+' tiendas'}</button>` : ''}`;
+  cont.hidden = false;
+  cont.querySelectorAll('.rs-tienda').forEach(b => b.addEventListener('click', () => {
+    const t = +b.dataset.t, g = por.get(t);
+    estado.zona = D.zonas[g.z]; estado.tienda = D.tiendas[t]; estado.pagina = 1;
+    revalidar(); render();
+    $('zona-resultados').scrollIntoView({behavior:'smooth', block:'start'});
+  }));
+  const mas = $('rsMas');
+  if (mas) mas.addEventListener('click', () => { RS_TODAS = !RS_TODAS; pintarResumenStock(filas); });
+}
+
 /* ---------------- eventos filtros ---------------- */
+/* Tras cambiar un filtro, se sueltan los que ya no tienen sentido con la nueva combinación (sin tocar los demás). */
+function revalidar(){
+  if (estado.tienda && !opcionesTienda().includes(estado.tienda)) estado.tienda='';
+  if (estado.subcat && !opcionesSubcat().includes(estado.subcat)) estado.subcat='';
+  if (estado.marcaVeh && !opcionesMarcaVeh().includes(estado.marcaVeh)) estado.marcaVeh='';
+  if (estado.modelo && !opcionesModelo().includes(estado.modelo)) estado.modelo='';
+  if (estado.anio && !opcionesAnio().includes(estado.anio)) estado.anio='';
+}
 $('fZona').addEventListener('change', e=>{
   estado.zona = e.target.value;
-  if (estado.tienda && !opcionesTienda().includes(estado.tienda)){
-    estado.tienda=''; estado.subcat=''; estado.marcaVeh=''; estado.modelo=''; estado.anio='';
-  }
+  revalidar();
+  estado.pagina=1; render();
+});
+$('fStock').addEventListener('change', e=>{
+  estado.stock = e.target.value;
+  if (estado.stock){ estado.orden='stock'; estado.sentido='desc'; }   // con el filtro de stock lo más útil es ver primero lo que más hay
+  revalidar();
   estado.pagina=1; render();
 });
 $('fTienda').addEventListener('change', e=>{
@@ -1314,7 +1569,8 @@ $('fBuscar').addEventListener('input', e=>{
   tq=setTimeout(()=>{ estado.q=v.trim(); estado.pagina=1; render(); }, 200);
 });
 $('btnLimpiar').addEventListener('click', ()=>{
-  estado.zona=estado.tienda=estado.subcat=estado.marcaVeh=estado.modelo=estado.anio=estado.q='';
+  estado.zona=estado.tienda=estado.subcat=estado.marcaVeh=estado.modelo=estado.anio=estado.q=estado.stock='';
+  estado.orden='remate'; estado.sentido='desc';
   estado.pagina=1; render();
 });
 $('btnTodaTienda').addEventListener('click', ()=>{ estado.subcat=''; estado.pagina=1; render(); });
@@ -1495,7 +1751,7 @@ function abrirPanelDestacado(d){
   $('panelCtaBtn').addEventListener('click', ()=>{
     cerrarPanel();
     estado.zona = d.zona; estado.tienda = d.tienda; estado.subcat = d.subcategoria;
-    estado.marcaVeh=''; estado.modelo=''; estado.anio=''; estado.q=''; estado.pagina=1;
+    estado.marcaVeh=''; estado.modelo=''; estado.anio=''; estado.q=''; estado.stock=''; estado.pagina=1;
     render();
     $('zona-resultados').scrollIntoView({behavior:'smooth', block:'start'});
   });
@@ -1513,26 +1769,16 @@ $('paso-actual').addEventListener('click', ()=>{
   $('fZona').focus();
 });
 $('btnBeneficioDescarga').addEventListener('click', ()=>{
-  const objetivo = estado.zona ? $('btnDescargarZonaExcel') : $('fZona');
+  const objetivo = (estado.zona && !$('btnDescargarZonaExcel').hidden) ? $('btnDescargarZonaExcel') : $('fZona');
   objetivo.scrollIntoView({behavior:'smooth', block:'center'});
   objetivo.focus();
 });
 $('btnBeneficioAplicacion').addEventListener('click', ()=>{
-  if (!estado.zona){
-    $('fZona').scrollIntoView({behavior:'smooth', block:'center'});
-    $('fZona').focus();
-    return;
-  }
   const bloque = $('bloqueAplicacion');
   if (!bloque.classList.contains('abierto')) $('btnMasFiltros').click();
   bloque.scrollIntoView({behavior:'smooth', block:'center'});
 });
 $('btnVerTodos').addEventListener('click', ()=>{
-  if (!estado.zona){
-    $('fZona').scrollIntoView({behavior:'smooth', block:'center'});
-    $('fZona').focus();
-    return;
-  }
   $('zona-resultados').scrollIntoView({behavior:'smooth', block:'start'});
 });
 
@@ -2100,6 +2346,7 @@ $('btnTema').addEventListener('click', ()=>{
 /* ---------------- arranque ---------------- */
 $('meta-datos').innerHTML = `Datos actualizados: ${esc(D.info.fecha)}`;
 $('footerFuente').innerHTML = `Fuente: <b>${esc(D.info.archivo)}</b> · ${num(D.info.totalTiendas)} tiendas · ${num(D.info.totalZonas)} zonas · ${num(D.info.totalSubcats)} subcategorías. El valor remate con IVA es el precio de venta final.`;
+if (matchMedia('(max-width:640px)').matches) $('fBuscar').placeholder = 'Buscar por nombre, código o SKU…';
 actualizarContadorSeleccion();
 revisarSeleccionAlCargar();
 render();

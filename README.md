@@ -860,3 +860,14 @@ obsolescencia todavía, no un error de cruce.
 ## 16. Estilo alineado con el panel Pricing HP (2026-11-10)
 
 Paleta, tipografía (Plus Jakarta Sans vía Google Fonts), tarjetas redondeadas con sombra suave y botones en píldora ahora coinciden con el panel Pricing HP. Los tokens (`--rojo`, `--tinta`, `--plano`, etc.) están al inicio de `plantilla_portal.html` (claro y oscuro) y los ajustes de forma, en el bloque final del `<style>` ("Alineado con el panel Pricing HP"). El panel enlaza a este sitio desde Obsolescencias (botón «Abrir portal de obsolescencias»).
+
+
+## 17. Ajustes v2 (2026-11-10)
+
+- **Barra superior** flotante: tarjeta con las cuatro esquinas redondeadas, igual que la del panel.
+- **Sin filtros se ven todos los productos**: el listado y el buscador de SKU/descripción funcionan sin activar ningún filtro.
+- **Vista rápida** dentro de una sola tarjeta cerrada (carrusel con desvanecido al borde).
+- **Ver detalle** sin cortes: la tabla ya no se desborda y el detalle se ajusta al ancho visible (variable `--cw`).
+- **Filtro de stock** (1/3/5/10/25/50/100 o más unidades) y **resumen "Dónde hay más stock"** por tienda: ranking, unidades, productos, top 3 por tienda y botón "Ver solo esta tienda". Al elegir stock se ordena por stock de mayor a menor.
+- **Móvil**: filtros en una columna, tarjetas de producto, panel de detalle desde abajo, resumen con 3 productos por tienda, botones y selectores ajustados.
+- CSS en el bloque "Ajustes v2" al final de `plantilla_portal.html`; regenerar con `python generar_portal.py` y luego `git checkout -- descargas`.
