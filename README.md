@@ -871,3 +871,8 @@ Paleta, tipografía (Plus Jakarta Sans vía Google Fonts), tarjetas redondeadas 
 - **Filtro de stock** (1/3/5/10/25/50/100 o más unidades) y **resumen "Dónde hay más stock"** por tienda: ranking, unidades, productos, top 3 por tienda y botón "Ver solo esta tienda". Al elegir stock se ordena por stock de mayor a menor.
 - **Móvil**: filtros en una columna, tarjetas de producto, panel de detalle desde abajo, resumen con 3 productos por tienda, botones y selectores ajustados.
 - CSS en el bloque "Ajustes v2" al final de `plantilla_portal.html`; regenerar con `python generar_portal.py` y luego `git checkout -- descargas`.
+
+## 18. Ajustes v3 (2026-11-10)
+
+- **Ver detalle / panel de Vista rápida**: «Años de aplicación» muestra solo inicio y fin (p. ej. 2007 – 2011). La apertura año por año («Años aperturados») solo aparece cuando se filtra por año, resaltando el año elegido.
+- **Resumen de zona**: aparece siempre que se elige una zona (sin necesidad de filtro de stock). Muestra por tienda productos con stock (surtido), unidades y stock valorizado a valor remate (también a precio normal, en pequeño), con los 3 productos con más stock. Se ordena por surtido (o unidades / valor) y cada tarjeta, al tocarla, deja ver todos los productos de esa tienda; «Volver al resumen» regresa a la zona. Respeta los demás filtros.

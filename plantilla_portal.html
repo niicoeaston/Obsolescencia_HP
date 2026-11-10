@@ -856,6 +856,30 @@ tbody tr.fila-detalle td{padding:0}
   .rs-grid{grid-template-columns:1fr}
 }
 
+
+/* ---------- v3: resumen de zona (surtido, unidades y valorizado) ---------- */
+.rs-volver{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:12px 18px;border-radius:999px;font-size:13.5px}
+.rs-volver button{appearance:none;border:0;background:var(--naranja-suave);color:var(--rojo);font-weight:600;border-radius:999px;padding:9px 16px;cursor:pointer;font-size:13px}
+.rs-volver button:hover{background:var(--rojo);color:#fff}
+.rs-orden{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 14px;font-size:12.5px;color:var(--tenue)}
+.rs-orden button{appearance:none;border:1px solid var(--borde);background:var(--zebra);color:var(--tinta-2);border-radius:999px;padding:7px 14px;font-weight:600;font-size:12.5px;cursor:pointer}
+.rs-orden button.on{background:var(--rojo);border-color:var(--rojo);color:#fff}
+.rs-kpis{flex-wrap:wrap}
+.rs-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.rs-stats > span{display:flex;flex-direction:column;background:var(--superficie);border-radius:14px;padding:6px 9px;min-width:0}
+.rs-stats > span.dest{background:var(--naranja-suave)}
+.rs-stats b{font-size:16px;font-weight:700;color:var(--tinta);line-height:1.2;white-space:nowrap}
+.rs-stats .dest b{color:var(--rojo)}
+.rs-stats i{font-style:normal;font-size:11px;color:var(--tenue)}
+.rs-normal{font-size:11.5px;color:var(--tenue)}
+@media(max-width:640px){
+  .rs-volver{border-radius:22px}
+  .rs-volver button{width:100%}
+  .rs-orden{margin-top:0}
+  .rs-kpis > div{flex:1 1 40%}
+  .rs-stats b{font-size:15px}
+}
+
 /* ---------- Mensajes, ayuda y pie en móvil ---------- */
 .ayuda-pasos{border:0;box-shadow:var(--sombra-panel);border-radius:24px}
 .mensaje{border-radius:18px}
@@ -1261,6 +1285,13 @@ function ordenar(filas){
   return copia;
 }
 
+/* «2006 – 2023» a partir de la lista de años (o del texto con años) */
+function rangoAnios(a){
+  if (typeof a === 'string') a = (a.match(/\b(?:19|20)\d{2}\b/g) || []).map(Number);
+  if (!a || !a.length) return '';
+  const i = Math.min(...a), f = Math.max(...a);
+  return i===f ? String(i) : i+' – '+f;
+}
 /* Contenido del "Ver detalle": el mismo en escritorio y en movil. */
 function contenidoDetalle(f){
   const campos = [];
@@ -1270,11 +1301,14 @@ function contenidoDetalle(f){
   if (f[MO]>=0) camposApp.push(['Modelo', esc(D.modelos[f[MO]])]);
   if (f[MT]>=0) camposApp.push(['Motor', esc(D.motores[f[MT]])]);
   if (f[AN]>=0){
-    camposApp.push(['Años de aplicación (original)', esc(D.anios[f[AN]])]);
     const ap = aniosDeFila(f);
-    if (ap.length>1) camposApp.push(['Años aperturados', ap.join(', ')]);
+    camposApp.push(['Años de aplicación', esc(rangoAnios(ap) || D.anios[f[AN]])]);
+    /* la apertura año por año solo se muestra cuando se filtra por año */
+    if (estado.anio){
+      camposApp.push(['Año seleccionado', esc(estado.anio)+' · compatible']);
+      if (ap.length>1) camposApp.push(['Años aperturados', ap.map(a => a===+estado.anio ? `<b>${a}</b>` : a).join(', ')]);
+    }
   }
-  if (estado.anio) camposApp.push(['Compatible con el año seleccionado', esc(estado.anio)]);
   if (!camposApp.length) camposApp.push(['Aplicación vehicular', 'Información no disponible']);
   campos.push(...camposApp);
   return campos;
@@ -1462,54 +1496,84 @@ function render(){
   }
 }
 
-/* ---------------- Resumen de stock por tienda ---------------- */
-let RS_TODAS = false;
+/* ---------------- Resumen por tienda de la zona ---------------- */
+let RS_TODAS = false, RS_ORDEN = 'surtido';
+const dinero = v => (v===null||v===undefined) ? '—' : (v>=1e6 ? '$'+(v/1e6).toFixed(1).replace('.',',')+' M' : clp(v));
 function pintarResumenStock(filas){
   const cont = $('resumenStock');
-  if (!estado.stock || estado.tienda || !filas.length){ cont.hidden = true; cont.innerHTML = ''; return; }
+  const vacio = () => { cont.hidden = true; cont.innerHTML = ''; };
+  if (!estado.zona || !filas.length){ vacio(); return; }
+
+  /* ya se está viendo una tienda: solo una barra para volver al resumen de la zona */
+  if (estado.tienda){
+    cont.className = 'resumen-stock rs-volver';
+    cont.innerHTML = `<span>Viendo <b>${esc(nombreDeTienda(estado.tienda))}</b> · ${esc(estado.zona)}</span>
+      <button type="button" id="rsVolver">‹ Volver al resumen de ${esc(estado.zona)}</button>`;
+    cont.hidden = false;
+    $('rsVolver').addEventListener('click', () => { estado.tienda=''; estado.pagina=1; revalidar(); render(); cont.scrollIntoView({behavior:'smooth', block:'start'}); });
+    return;
+  }
+  cont.className = 'resumen-stock';
+
   const por = new Map();
   for (const f of filas){
-    if (!(f[ST] > 0)) continue;
     let g = por.get(f[T]);
-    if (!g){ g = {t:f[T], z:f[Z], n:0, u:0, top:[]}; por.set(f[T], g); }
+    if (!g) { g = {t:f[T], z:f[Z], todos:0, n:0, u:0, vr:0, vn:0, top:[]}; por.set(f[T], g); }
+    g.todos++;
+    if (!(f[ST] > 0)) continue;
     g.n++; g.u += f[ST];
+    if (f[VR]!==null) g.vr += f[ST]*f[VR];
+    if (f[PN]) g.vn += f[ST]*f[PN];
     if (g.top.length < 3 || f[ST] > g.top[g.top.length-1][ST]){
       g.top.push(f); g.top.sort((a,b)=>b[ST]-a[ST]); if (g.top.length > 3) g.top.pop();
     }
   }
-  const grupos = [...por.values()].sort((a,b)=>b.u-a.u);
-  if (!grupos.length){ cont.hidden = true; cont.innerHTML = ''; return; }
-  const totU = grupos.reduce((s,g)=>s+g.u, 0), totN = grupos.reduce((s,g)=>s+g.n, 0);
-  const maxU = grupos[0].u;
+  const clave = {surtido:g=>g.n, unidades:g=>g.u, valor:g=>g.vr}[RS_ORDEN];
+  const grupos = [...por.values()].filter(g=>g.n>0).sort((a,b)=>clave(b)-clave(a) || b.u-a.u);
+  if (!grupos.length){ vacio(); return; }
+  const tot = grupos.reduce((s,g)=>({n:s.n+g.n, u:s.u+g.u, vr:s.vr+g.vr, vn:s.vn+g.vn}), {n:0,u:0,vr:0,vn:0});
+  const maxC = clave(grupos[0]) || 1;
   const LIM = matchMedia('(max-width:640px)').matches ? 3 : 6;
   const visibles = RS_TODAS ? grupos : grupos.slice(0, LIM);
-  const lugar = estado.zona || 'todas las zonas';
+  const conOtros = !!(estado.stock || estado.subcat || estado.q || estado.marcaVeh || estado.modelo || estado.anio);
+  const ORD = [['surtido','Mayor surtido'],['unidades','Más unidades'],['valor','Mayor valor']];
   cont.innerHTML = `
     <div class="rs-cabeza">
-      <div class="rs-titulo"><b>Dónde hay más stock</b><span>${esc(lugar)} · productos con ${num(+estado.stock)} ${+estado.stock===1?'unidad':'unidades'} o más, por tienda</span></div>
+      <div class="rs-titulo"><b>Resumen de ${esc(estado.zona)}</b><span>Tiendas con productos disponibles${conOtros?' (según los filtros aplicados)':''} · toca una tienda para ver todo lo que tiene</span></div>
       <div class="rs-kpis">
         <div><b>${num(grupos.length)}</b><span>${grupos.length===1?'tienda':'tiendas'}</span></div>
-        <div><b>${num(totN)}</b><span>productos</span></div>
-        <div><b>${num(totU)}</b><span>unidades</span></div>
+        <div><b>${num(tot.n)}</b><span>productos con stock</span></div>
+        <div><b>${num(tot.u)}</b><span>unidades</span></div>
+        <div title="Stock × valor remate: ${clp(tot.vr)}"><b>${dinero(tot.vr)}</b><span>valorizado remate</span></div>
       </div>
     </div>
+    <div class="rs-orden" role="group" aria-label="Ordenar tiendas">
+      <span>Ordenar tiendas por</span>
+      ${ORD.map(([k,t])=>`<button type="button" class="${RS_ORDEN===k?'on':''}" data-o="${k}">${t}</button>`).join('')}
+    </div>
     <div class="rs-grid">
-      ${visibles.map((g, k) => `<button class="rs-tienda" type="button" data-t="${g.t}" title="Ver solo los productos de esta tienda">
+      ${visibles.map((g, k) => `<button class="rs-tienda" type="button" data-t="${g.t}" title="Ver todo lo que tiene esta tienda">
         <span class="rs-fila1"><span class="rs-pos">${k+1}</span><span class="rs-nombre">${esc(nombreDeTienda(D.tiendas[g.t]))}</span><span class="chip-zona ${claseChipZona(D.zonas[g.z])}">${esc(etiquetaCortaZona(D.zonas[g.z]))}</span></span>
-        <span class="rs-cifras"><b>${num(g.u)}</b> unidades · ${num(g.n)} ${g.n===1?'producto':'productos'}</span>
-        <span class="rs-barra"><i style="width:${Math.max(4, Math.round(g.u/maxU*100))}%"></i></span>
+        <span class="rs-stats">
+          <span class="${RS_ORDEN==='surtido'?'dest':''}"><b>${num(g.n)}</b><i>${g.n===1?'producto':'productos'}</i></span>
+          <span class="${RS_ORDEN==='unidades'?'dest':''}"><b>${num(g.u)}</b><i>unidades</i></span>
+          <span class="${RS_ORDEN==='valor'?'dest':''}" title="Stock × valor remate: ${clp(g.vr)}"><b>${dinero(g.vr)}</b><i>valorizado</i></span>
+        </span>
+        <span class="rs-barra"><i style="width:${Math.max(4, Math.round(clave(g)/maxC*100))}%"></i></span>
+        ${g.vn ? `<span class="rs-normal">A precio normal: ${dinero(g.vn)}</span>` : ''}
         <span class="rs-top">${g.top.map(f => `<span class="rs-item"><span>${esc(D.textos[f[X]])}</span><b>${num(f[ST])}</b></span>`).join('')}</span>
-        <span class="rs-accion">Ver solo esta tienda ›</span>
+        <span class="rs-accion">Ver los ${num(g.todos)} ${g.todos===1?'producto':'productos'} de la tienda ›</span>
       </button>`).join('')}
     </div>
-    ${grupos.length > LIM ? `<button class="rs-mas" id="rsMas" type="button">${RS_TODAS ? 'Mostrar solo las '+LIM+' con más stock' : 'Ver las '+num(grupos.length)+' tiendas'}</button>` : ''}`;
+    ${grupos.length > LIM ? `<button class="rs-mas" id="rsMas" type="button">${RS_TODAS ? 'Mostrar solo las '+LIM+' primeras' : 'Ver las '+num(grupos.length)+' tiendas'}</button>` : ''}`;
   cont.hidden = false;
   cont.querySelectorAll('.rs-tienda').forEach(b => b.addEventListener('click', () => {
     const t = +b.dataset.t, g = por.get(t);
     estado.zona = D.zonas[g.z]; estado.tienda = D.tiendas[t]; estado.pagina = 1;
     revalidar(); render();
-    $('zona-resultados').scrollIntoView({behavior:'smooth', block:'start'});
+    $('resumenStock').scrollIntoView({behavior:'smooth', block:'start'});
   }));
+  cont.querySelectorAll('.rs-orden button').forEach(b => b.addEventListener('click', () => { RS_ORDEN = b.dataset.o; pintarResumenStock(filas); }));
   const mas = $('rsMas');
   if (mas) mas.addEventListener('click', () => { RS_TODAS = !RS_TODAS; pintarResumenStock(filas); });
 }
@@ -1716,7 +1780,7 @@ function abrirPanelDestacado(d){
   if (d.marcaVehiculo) campos.push(['Marca del vehículo', esc(d.marcaVehiculo)]);
   if (d.modelo) campos.push(['Modelo', esc(d.modelo)]);
   if (d.motor) campos.push(['Motor', esc(d.motor)]);
-  if (d.anios) campos.push(['Años de aplicación', esc(d.anios)]);
+  if (d.anios) campos.push(['Años de aplicación', esc(rangoAnios(d.anios) || d.anios)]);
   campos.push(['Zona', esc(d.zona)]);
   campos.push(['Tienda', esc(d.tienda)]);
   campos.push(['Subcategoría', esc(d.subcategoria)]);
