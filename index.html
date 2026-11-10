@@ -1393,7 +1393,22 @@ function ajustarAnchoDetalle(){
   const c = document.querySelector('.tabla-caja');
   if (c && c.clientWidth) document.documentElement.style.setProperty('--cw', c.clientWidth+'px');
 }
-window.addEventListener('resize', ajustarAnchoDetalle);
+/* Pantallas grandes: el diseño está pensado para ~1480 px de ancho y se ve chico en monitores más grandes. Se escala todo
+   (letras, botones, tarjetas) según el ancho disponible y, en pantallas muy anchas, también según el alto (relación de aspecto). */
+const ESC_BASE_W = 1480, ESC_BASE_H = 820, ESC_MAX = 2.6;
+function escalarPantalla(){
+  let z = 1;
+  if (window.innerWidth >= 1100){
+    z = Math.min(window.innerWidth/ESC_BASE_W, (window.innerHeight/ESC_BASE_H)*1.8);
+    z = Math.round(Math.max(1, Math.min(ESC_MAX, z))*20)/20;
+  }
+  const actual = parseFloat(document.documentElement.style.zoom) || 1;
+  if (z !== actual) document.documentElement.style.zoom = z===1 ? '' : String(z);
+  ajustarAnchoDetalle();
+}
+let _escT;
+window.addEventListener('resize', () => { clearTimeout(_escT); _escT = setTimeout(escalarPantalla, 80); });
+escalarPantalla();
 
 function pintarResultados(filas){
   const mostrarSubcat = !estado.subcat;
