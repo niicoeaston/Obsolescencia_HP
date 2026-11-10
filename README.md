@@ -854,3 +854,9 @@ bloqueada). Dos tiendas del archivo diario (`AP0029 - Mall Plaza Oeste`,
 `AP0080 - Casablanca`) no se pudieron agregar por no tener zona conocida en
 el maestro — confirmado con el usuario que son tiendas nuevas sin
 obsolescencia todavía, no un error de cruce.
+
+---
+
+## 16. Estilo alineado con el panel Pricing HP (2026-11-10)
+
+Paleta, tipografía (Plus Jakarta Sans vía Google Fonts), tarjetas redondeadas con sombra suave y botones en píldora ahora coinciden con el panel Pricing HP. Los tokens (`--rojo`, `--tinta`, `--plano`, etc.) están al inicio de `plantilla_portal.html` (claro y oscuro) y los ajustes de forma, en el bloque final del `<style>` ("Alineado con el panel Pricing HP"). El panel enlaza a este sitio desde Obsolescencias (botón «Abrir portal de obsolescencias»).

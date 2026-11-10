@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Liquidación de Productos en Obsolescencia · Autoplanet</title>
 <meta name="description" content="Consulta y descarga los productos en liquidación por obsolescencia de Autoplanet según tu zona, tienda y subcategoría.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
    Autoplanet · Portal de Liquidación de Obsolescencia
@@ -15,64 +18,65 @@
    ===================================================================== */
 :root{
   color-scheme: light;
-  --rojo:#F2101F;            /* rojo de acción: CTA, precio remate, hero */
-  --rojo-oscuro:#C00D19;
+  --rojo:#e31c25;            /* rojo de acción: CTA, precio remate, hero */
+  --rojo-oscuro:#c0141c;
   --rojo-marca:#D7141A;      /* rojo exacto del logo Grupo Planet */
-  --naranja:#E65100;         /* naranja real de la nav de autoplanet.cl */
-  --naranja-suave:#FDECE1;
-  --tinta:#1C1613;
-  --tinta-2:#5B534E;
-  --tenue:#8A8178;
-  --plano:#FAF8F6;
+  --naranja:#e31c25;         /* naranja real de la nav de autoplanet.cl */
+  --naranja-suave:#fde8e9;
+  --tinta:#1c1417;
+  --tinta-2:#4f4448;
+  --tenue:#8a7f82;
+  --plano:#ebe6e6;
   --superficie:#FFFFFF;
-  --borde:#EAE4DE;
-  --borde-fuerte:#D8CFC6;
-  --zebra:#FBF9F7;
+  --borde:#f1e9ea;
+  --borde-fuerte:#e4d8da;
+  --zebra:#fbf9f9;
   --ambar:#8A5206;
   --ambar-fondo:#FEF3C7;
   --ambar-borde:#F3D68A;
-  --info:#5B534E;
-  --info-fondo:#F3F0EC;
-  --info-borde:#D8CFC6;
-  --radio:10px;
-  --radio-chico:6px;
+  --info:#4f4448;
+  --info-fondo:#f6f1f2;
+  --info-borde:#e4d8da;
+  --radio:22px;
+  --radio-chico:14px;
   --sombra-flot:0 12px 32px rgba(28,22,19,.14);
-  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --sans:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --sombra-panel:0 2px 16px rgba(90,30,35,.07);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme: dark;
-    --rojo:#FF4B4B;
-    --rojo-oscuro:#FF6B6B;
+    --rojo:#ee2c35;
+    --rojo-oscuro:#ff6a70;
     --rojo-marca:#FF5C63;
-    --naranja:#FF9142;
-    --naranja-suave:rgba(255,145,66,.14);
-    --tinta:#F3F0ED;
-    --tinta-2:#C9C0B7;
-    --tenue:#948B82;
-    --plano:#141110;
-    --superficie:#1E1B19;
-    --borde:#332D28;
-    --borde-fuerte:#453D36;
-    --zebra:#241F1C;
+    --naranja:#ff5c62;
+    --naranja-suave:rgba(238,44,53,.16);
+    --tinta:#f1ecec;
+    --tinta-2:#cfc6c9;
+    --tenue:#a79ea1;
+    --plano:#121011;
+    --superficie:#262122;
+    --borde:#3a3235;
+    --borde-fuerte:#4a4043;
+    --zebra:#2b2527;
     --ambar:#F0C05A;
     --ambar-fondo:rgba(240,192,90,.12);
     --ambar-borde:rgba(240,192,90,.35);
-    --info:#C9C0B7;
+    --info:#cfc6c9;
     --info-fondo:rgba(255,255,255,.04);
-    --info-borde:#453D36;
+    --info-borde:#4a4043;
     --sombra-flot:0 12px 32px rgba(0,0,0,.5);
   }
 }
 :root[data-theme="dark"]{
   color-scheme: dark;
-  --rojo:#FF4B4B; --rojo-oscuro:#FF6B6B; --rojo-marca:#FF5C63;
-  --naranja:#FF9142; --naranja-suave:rgba(255,145,66,.14);
-  --tinta:#F3F0ED; --tinta-2:#C9C0B7; --tenue:#948B82;
-  --plano:#141110; --superficie:#1E1B19; --borde:#332D28; --borde-fuerte:#453D36;
-  --zebra:#241F1C;
+  --rojo:#ee2c35; --rojo-oscuro:#ff6a70; --rojo-marca:#FF5C63;
+  --naranja:#ff5c62; --naranja-suave:rgba(238,44,53,.16);
+  --tinta:#f1ecec; --tinta-2:#cfc6c9; --tenue:#a79ea1;
+  --plano:#121011; --superficie:#262122; --borde:#3a3235; --borde-fuerte:#4a4043;
+  --zebra:#2b2527;
   --ambar:#F0C05A; --ambar-fondo:rgba(240,192,90,.12); --ambar-borde:rgba(240,192,90,.35);
-  --info:#C9C0B7; --info-fondo:rgba(255,255,255,.04); --info-borde:#453D36;
+  --info:#cfc6c9; --info-fondo:rgba(255,255,255,.04); --info-borde:#4a4043;
   --sombra-flot:0 12px 32px rgba(0,0,0,.5);
 }
 
@@ -152,7 +156,7 @@ button,input,select{font:inherit;color:inherit}
   appearance:none;display:inline-flex;align-items:center;gap:9px;margin-top:22px;
   background:var(--rojo);color:#fff;border:0;cursor:pointer;
   border-radius:999px;padding:13px 22px;font-size:14.5px;font-weight:700;
-  box-shadow:0 8px 20px rgba(242,16,31,.28); transition:background .15s,transform .1s;
+  box-shadow:0 8px 20px rgba(227,28,37,.28); transition:background .15s,transform .1s;
 }
 .hero .paso:hover{background:var(--rojo-oscuro)}
 .hero .paso:active{transform:translateY(1px)}
@@ -249,7 +253,7 @@ select:focus,input:focus{border-color:var(--rojo)}
 .mensaje .ic{flex:0 0 auto;font-size:16px;line-height:1.35}
 .mensaje.aviso{background:var(--ambar-fondo);border-color:var(--ambar-borde);color:var(--ambar)}
 .mensaje.dato{background:var(--info-fondo);border-color:var(--info-borde);color:var(--info)}
-.mensaje.error{background:var(--naranja-suave);border-color:#EFC49E;color:#8A3B0A}
+.mensaje.error{background:var(--naranja-suave);border-color:#f3b6b9;color:#9b1218}
 .mensaje b{font-weight:700}
 
 /* ---------- Cuerpo / resultados ---------- */
@@ -669,6 +673,33 @@ footer{border-top:1px solid var(--borde);padding:28px 20px 40px}
 .footer-marca img{height:28px;width:auto;border-radius:4px}
 .footer-marca span{font-size:12.5px;color:var(--tenue)}
 .footer-fuente{font-size:12px;color:var(--tenue);line-height:1.7;max-width:520px}
+
+/* =====================================================================
+   Alineado con el panel Pricing HP: mismo color, tipografía (Plus Jakarta Sans),
+   tarjetas redondeadas con sombra suave y botones en píldora.
+   ===================================================================== */
+:root{--sombra-panel:0 2px 16px rgba(90,30,35,.07)}
+:root[data-theme="dark"]{--sombra-panel:0 2px 16px rgba(0,0,0,.38)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--sombra-panel:0 2px 16px rgba(0,0,0,.38)}}
+body{font-weight:400}
+.topbar{border-bottom:0;box-shadow:var(--sombra-panel);border-radius:0 0 28px 28px}
+.hero{background:transparent}
+.hero h1{font-weight:700;letter-spacing:-.025em}
+.hero .paso{font-weight:600}
+.conteo{font-weight:700}
+.beneficio,.tarjeta-filtros,.tabla-caja,.mensaje,.vacio-tarjetas,.ms-linea{border:0;box-shadow:var(--sombra-panel)}
+.tarjeta-filtros{border-radius:28px}
+.btn,.btn-tema,.btn-mi-seleccion,.btn-mas-filtros,.btn-detalle-fila,.link-limpiar{border-radius:999px}
+.btn,.btn-mi-seleccion,.btn-tema,.btn-detalle-fila{border:0;box-shadow:var(--sombra-panel)}
+.btn.primario{box-shadow:0 8px 20px rgba(227,28,37,.25)}
+.btn-mas-filtros{border-radius:999px;font-weight:600}
+select,input[type="search"]{border-radius:999px;border:1px solid var(--borde-fuerte);padding-left:18px;padding-right:18px}
+.buscador-wrap input{padding-left:42px}
+.campo > label{font-weight:600}
+thead th{font-weight:600}
+.chip-subcat{background:var(--naranja-suave);color:var(--rojo);font-weight:600}
+.chip-tienda{font-weight:600}
+tbody tr.fila-prod:hover td{background:var(--naranja-suave)}
 </style>
 </head>
 <body>
