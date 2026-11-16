@@ -20,6 +20,14 @@ Reglas de negocio (confirmadas con el usuario el 2026-08-06):
   stock del dia. Confirmado con el usuario el 2026-08-26.
 - Los productos que quedan en stock 0 NO se eliminan del listado: el portal
   los muestra marcados como "Agotado" (ver plantilla_portal.html).
+- Un material que NO aparece en el archivo del dia no se toca, salvo que este en
+  la lista de SKU que se pidio a SAP (el "Base OBS*.xlsx" mas reciente de la
+  carpeta): SAP no lista las filas sin stock, asi que un SKU pedido y ausente
+  es stock 0 real, pero un SKU que nunca se pidio es solo "no consultado"
+  (corregido el 2026-11-16: el listado tenia 1.607 materiales que no estaban en
+  la lista pedida y quedaron todos Agotados por error).
+- Proteccion: si la actualizacion dejaria en 0 a mas del 30 % de las filas de las
+  tiendas presentes, se aborta sin guardar (salida 3); --forzar la salta.
 - El stock NUNCA sube ni se "recupera" solo (confirmado con el usuario el
   2026-08-17, tras un problema causado por productos que volvieron a
   aparecer con stock): son productos en liquidacion, asi que solo se
@@ -109,6 +117,9 @@ class ResultadoActualizacion:
     productos_agotados_nuevos: list = field(default_factory=list)
     productos_subida_ignorada: list = field(default_factory=list)
     productos_nuevos_ignorados: list = field(default_factory=list)
+    materiales_no_consultados: set = field(default_factory=set)
+    filas_total: int = 0
+    filas_evaluadas: int = 0
     filas_agregadas: list = field(default_factory=list)
     respaldo: Path | None = None
 
@@ -164,10 +175,36 @@ def leer_stock_diario(ruta: Path):
     return stock, tiendas_presentes, textos
 
 
-def actualizar(fecha: date | None = None, guardar: bool = True) -> ResultadoActualizacion:
+class BajasMasivas(RuntimeError):
+    pass
+
+
+SKU_PEDIDOS = CARPETA_STOCK_DIARIO / "SKU_PEDIDOS.txt"   # lo escribe el panel al copiar la lista de SKU para SAP (base del mes + materiales del portal)
+
+
+def skus_pedidos(archivo_stock: Path | None = None) -> set[str] | None:
+    """SKU que se pegaron en SAP: la columna Material del 'Base OBS*.xlsx' mas reciente de la carpeta (None si no hay) mas, si el
+    panel guardo la lista copiada (SKU_PEDIDOS.txt) ANTES de bajar este archivo de stock, esa lista (base del mes + todo el portal)."""
+    out: set[str] = set()
+    c = [f for f in CARPETA_STOCK_DIARIO.glob("Base OBS*.xlsx") if not f.name.startswith("~$")]
+    if c:
+        wb = openpyxl.load_workbook(max(c, key=lambda f: f.stat().st_mtime), read_only=True, data_only=True)
+        ws = wb[wb.sheetnames[0]]
+        out |= {_material_a_texto(r[0]) for r in ws.iter_rows(min_row=2, max_col=1, values_only=True) if r and r[0] is not None}
+        wb.close()
+    if SKU_PEDIDOS.is_file() and (archivo_stock is None or SKU_PEDIDOS.stat().st_mtime <= archivo_stock.stat().st_mtime):
+        out |= {l.strip() for l in SKU_PEDIDOS.read_text(encoding="utf-8", errors="ignore").splitlines() if l.strip()}
+    out.discard("")
+    return out or None
+
+
+def actualizar(fecha: date | None = None, guardar: bool = True, forzar: bool = False) -> ResultadoActualizacion:
     fecha = fecha or date.today()
     archivo_dia = localizar_archivo_del_dia(fecha)
     stock_diario, tiendas_presentes, textos_diario = leer_stock_diario(archivo_dia)
+    materiales_archivo = {m for (_, m) in stock_diario}
+    pedidos = skus_pedidos(archivo_dia)
+    filas_en_tiendas_presentes = 0
 
     wb = openpyxl.load_workbook(MASTER)
     ws = wb["Base"] if "Base" in wb.sheetnames else wb[max(wb.sheetnames, key=lambda h: wb[h].max_column)]
@@ -205,6 +242,12 @@ def actualizar(fecha: date | None = None, guardar: bool = True) -> ResultadoActu
             continue  # tienda ausente hoy: no se toca su stock
         clave = (tienda, material)
         vistos_hoy.add(clave)
+        resultado.filas_total += 1
+        if material not in materiales_archivo and (pedidos is None or material not in pedidos):
+            resultado.materiales_no_consultados.add(material)   # no estaba en lo que se pidio a SAP: no se sabe su stock, no se toca
+            continue
+        filas_en_tiendas_presentes += 1
+        resultado.filas_evaluadas += 1
 
         # SAP a veces trae "Libre utilizacion" negativa (ajustes de inventario).
         # Para el portal eso equivale a "sin stock": nunca se escribe un
@@ -256,6 +299,10 @@ def actualizar(fecha: date | None = None, guardar: bool = True) -> ResultadoActu
 
         resultado.productos_nuevos_ignorados.append((tienda, material, texto, cantidad))
 
+    if filas_en_tiendas_presentes and len(resultado.productos_agotados_nuevos) > 0.30 * filas_en_tiendas_presentes and not forzar:
+        raise BajasMasivas(f"La actualizacion dejaria en Agotado {len(resultado.productos_agotados_nuevos)} de {filas_en_tiendas_presentes} filas "
+                           f"({len(resultado.productos_agotados_nuevos) / filas_en_tiendas_presentes:.0%}): parece que el archivo de SAP esta incompleto. No se guardo nada. "
+                           "Si es correcto, ejecuta con --forzar.")
     if guardar:
         CARPETA_RESPALDOS.mkdir(exist_ok=True)
         respaldo = CARPETA_RESPALDOS / f"Listado Obsolecencia (antes de {archivo_dia.stem}).xlsx"
@@ -274,6 +321,7 @@ def imprimir_reporte(r: ResultadoActualizacion) -> None:
     print(f"Tiendas ausentes hoy (NO tocadas): {len(r.tiendas_ausentes)}")
     for t in r.tiendas_ausentes:
         print(f"    - {t}")
+    print(f"Materiales del listado que no estaban en lo pedido a SAP (NO tocados): {len(r.materiales_no_consultados)}")
     print(f"Productos actualizados: {r.productos_actualizados}")
     print(f"  Bajaron de stock: {len(r.productos_bajaron)}")
     print(f"  Pasaron a Agotado (de >0 a 0): {len(r.productos_agotados_nuevos)}")
@@ -292,8 +340,13 @@ def imprimir_reporte(r: ResultadoActualizacion) -> None:
 
 if __name__ == "__main__":
     fecha = date.today()
-    if len(sys.argv) == 3:
-        dia, mes = sys.argv[1], sys.argv[2]
+    args = [a for a in sys.argv[1:] if a != "--forzar"]
+    if len(args) == 2:
+        dia, mes = args
         fecha = date(fecha.year, int(mes), int(dia))
-    resultado = actualizar(fecha)
+    try:
+        resultado = actualizar(fecha, forzar="--forzar" in sys.argv)
+    except BajasMasivas as e:
+        print("ABORTADO: " + str(e))
+        raise SystemExit(3)
     imprimir_reporte(resultado)
